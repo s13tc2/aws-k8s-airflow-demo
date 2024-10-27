@@ -39,7 +39,7 @@ jobs:
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         BACKEND_BUCKET_NAME: ${{ vars.BUCKET_NAME }}
         BACKEND_REGION: ${{ vars.BUCKET_REGION }}
-        BACKEND_KEY: airflow-${{ vars.ENVIRONMENT_NAME }}
+        BACKEND_KEY: ${{ vars.ENVIRONMENT_NAME }}
       working-directory: ${{ env.WORKING_DIRECTORY }}
       run: |
         terraform init \
