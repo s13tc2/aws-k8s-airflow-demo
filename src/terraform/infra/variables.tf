@@ -30,5 +30,4 @@ variable "k8s_namespace" {
 }
 variable "k8s_service_account_name" {
   type = string
-}
-variable 
+} 
