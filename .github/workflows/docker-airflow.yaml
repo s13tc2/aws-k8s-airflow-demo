@@ -1,0 +1,77 @@
+name: Airflow-Docker-Deployment
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to run tests against'
+        type: environment
+        required: true
+
+env:
+  AIRFLOW_IMAGE: 'apache/airflow'
+  AIRFLOW_VERSION: '2.10.2'  # Matching your Dockerfile version
+  DOCKER_IMAGE_NAME: 'airflow'
+  DOCKER_WORKING_DIRECTORY: "./src/airflow"
+  WORKING_DIRECTORY: "./src/terraform"
+
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ github.event.inputs.environment }}
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - id: setup
+      name: Setup `terraform`
+      uses: hashicorp/setup-terraform@v2
+      with:
+        terraform_version: ${{ env.TERRAFORM_VERSION }}
+        terraform_wrapper: false
+
+    - id: terraform
+      name: Terraform Output
+      env:
+        AWS_ACCESS_KEY_ID: ${{ vars.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        BACKEND_BUCKET_NAME: ${{ vars.BUCKET_NAME }}
+        BACKEND_REGION: ${{ vars.BUCKET_REGION }}
+        BACKEND_KEY: airflow-${{ vars.ENVIRONMENT_NAME }}
+      working-directory: ${{ env.WORKING_DIRECTORY }}
+      run: |
+        terraform init \
+          -backend-config='bucket='$BACKEND_BUCKET_NAME \
+          -backend-config='region='$BACKEND_REGION \
+          -backend-config='key='$BACKEND_KEY
+
+        terraform apply -refresh-only -auto-approve
+
+        registry_endpoint=$(terraform output -raw airflow_repository_url)
+        echo $registry_endpoint
+        echo "registry_endpoint=$registry_endpoint" >> "$GITHUB_OUTPUT"
+
+    - id: image-version
+      name: Generate Version Number
+      run: |
+        echo "version=$(date +'%Y.%m').${{ github.run_number }}" >> "$GITHUB_OUTPUT"
+
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ vars.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ vars.PRIMARY_REGION }}
+
+    - name: Log in to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v2
+
+    - name: Build and push custom Airflow image
+      uses: docker/build-push-action@v5
+      with:
+        context: ${{ env.DOCKER_WORKING_DIRECTORY }}
+        push: true
+        tags: ${{ steps.terraform.outputs.registry_endpoint }}:${{ steps.image-version.outputs.version }}
