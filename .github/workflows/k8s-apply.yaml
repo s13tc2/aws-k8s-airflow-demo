@@ -114,6 +114,18 @@ jobs:
       #     echo "Airflow Repository: ${{ needs.infra.outputs.airflow_repository }}"
       #     echo "Airflow Repository URL: ${{ needs.infra.outputs.airflow_repository_url }}"
 
+      
+
+      - name: Get Pods Status
+        run: |
+          kubectl get pods -n app -o wide
+
+      - name: Restart Airflow Webserver
+        run: |
+          kubectl delete pod -n app -l app.kubernetes.io/component=webserver
+          # Optional: wait for new pod to be ready
+          kubectl wait --for=condition=ready pod -l app.kubernetes.io/component=webserver -n app --timeout=300s
+
       - name: Get Pods Status
         run: |
           kubectl get pods -n app -o wide
