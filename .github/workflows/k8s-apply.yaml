@@ -125,7 +125,7 @@ jobs:
           echo "Actual Secret Provider Classes in cluster:"
           kubectl get secretproviderclass -n app -o name
 
-      # - name: Debug Secret Provider
+      - name: Debug Secret Provider
         run: |
           echo "Checking Secret Provider Class..."
           kubectl get secretproviderclass -n app
