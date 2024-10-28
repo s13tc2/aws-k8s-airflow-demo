@@ -125,6 +125,37 @@ jobs:
         run: |
           kubectl get pods -n airflow -o wide
 
+        # Detailed version with multiple checks
+      - name: Debug Airflow Deployment
+        run: |
+          echo "Checking pod status..."
+          kubectl get pods -n airflow -o wide
+          
+          echo "\nChecking pod details..."
+          kubectl describe pod -n airflow -l app=airflow-webserver
+          
+          echo "\nChecking logs..."
+          kubectl logs -n airflow -l app=airflow-webserver --tail=100
+
+      # Version with status check
+      - name: Check Airflow Pod Status
+        run: |
+          POD_NAME=$(kubectl get pods -n airflow -l app=airflow-webserver -o jsonpath='{.items[0].metadata.name}')
+          POD_STATUS=$(kubectl get pod $POD_NAME -n airflow -o jsonpath='{.status.phase}')
+          echo "Pod Name: $POD_NAME"
+          echo "Status: $POD_STATUS"
+          
+          if [ "$POD_STATUS" != "Running" ]; then
+            echo "Pod is not running. Getting more details..."
+            kubectl describe pod $POD_NAME -n airflow
+            exit 1
+          fi
+
+      # Using GitHub environment variables
+      - name: Get Pods Status with Dynamic Namespace
+        run: |
+          kubectl get pods -n ${{ steps.namespace.outputs.namespace }} -o wide
+
       # Validate fleet-api and fleet-portal Pods
       - name: Ensure airflow Pods are Running
         run: |
@@ -243,37 +274,6 @@ jobs:
       - name: Get Pods Status
         run: |
           kubectl get pods -n ${{ steps.Apply.outputs.k8s_namespace }} -o wide
-
-      # Detailed version with multiple checks
-      - name: Debug Airflow Deployment
-        run: |
-          echo "Checking pod status..."
-          kubectl get pods -n airflow -o wide
-          
-          echo "\nChecking pod details..."
-          kubectl describe pod -n airflow -l app=airflow-webserver
-          
-          echo "\nChecking logs..."
-          kubectl logs -n airflow -l app=airflow-webserver --tail=100
-
-      # Version with status check
-      - name: Check Airflow Pod Status
-        run: |
-          POD_NAME=$(kubectl get pods -n airflow -l app=airflow-webserver -o jsonpath='{.items[0].metadata.name}')
-          POD_STATUS=$(kubectl get pod $POD_NAME -n airflow -o jsonpath='{.status.phase}')
-          echo "Pod Name: $POD_NAME"
-          echo "Status: $POD_STATUS"
-          
-          if [ "$POD_STATUS" != "Running" ]; then
-            echo "Pod is not running. Getting more details..."
-            kubectl describe pod $POD_NAME -n airflow
-            exit 1
-          fi
-
-      # Using GitHub environment variables
-      - name: Get Pods Status with Dynamic Namespace
-        run: |
-          kubectl get pods -n ${{ steps.namespace.outputs.namespace }} -o wide
 
       # Get fleet-api Pods and Check Images
       - name: Get airflow Pod Images
