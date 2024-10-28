@@ -155,18 +155,18 @@ jobs:
           helm repo add aws-secrets-store https://aws.github.io/secrets-store-csi-driver-provider-aws
           helm repo update
 
-      - name: Install/Upgrade Secrets Store CSI Driver
-        run: |
-          helm upgrade --install csi-secrets-store secrets-store-csi-driver/secrets-store-csi-driver \
-            --namespace kube-system \
-            --create-namespace \
-            --set syncSecret.enabled=true \
-            --set installCRDs=true
+      # - name: Install/Upgrade Secrets Store CSI Driver
+      #   run: |
+      #     helm upgrade --install csi-secrets-store secrets-store-csi-driver/secrets-store-csi-driver \
+      #       --namespace kube-system \
+      #       --create-namespace \
+      #       --set syncSecret.enabled=true \
+      #       --set installCRDs=true
 
-      - name: Install/Upgrade AWS Secrets Provider
-        run: |
-          helm upgrade --install secrets-provider-aws aws-secrets-store/secrets-store-csi-driver-provider-aws \
-            --namespace kube-system
+      # - name: Install/Upgrade AWS Secrets Provider
+      #   run: |
+      #     helm upgrade --install secrets-provider-aws aws-secrets-store/secrets-store-csi-driver-provider-aws \
+      #       --namespace kube-system
 
       # - name: Install/Upgrade Airflow
       #   run: |
@@ -176,6 +176,29 @@ jobs:
       #       --set webserver.defaultUser.enabled=true \
       #       --set webserver.defaultUser.username=admin \
       #       --set webserver.defaultUser.password=admin
+
+      
+      - name: Remove Helm Repositories
+        run: |
+          helm repo remove secrets-store-csi-driver
+          helm repo remove aws-secrets-store
+          helm repo remove apache-airflow
+
+      - name: Uninstall AWS Secrets Provider
+        run: |
+          helm uninstall secrets-provider-aws \
+            --namespace kube-system
+
+      - name: Uninstall Secrets Store CSI Driver
+        run: |
+          helm uninstall csi-secrets-store \
+            --namespace kube-system
+
+      - name: Uninstall Airflow
+        run: |
+          helm uninstall airflow \
+            --namespace airflow
+          kubectl delete namespace airflow
                 
       - name: Wait for CRDs to be Established
         run: |
