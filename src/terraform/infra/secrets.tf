@@ -34,5 +34,5 @@ resource "random_password" "fernet_key" {
   override_special = "_-" # Limiting special characters for fernet key compatibility
   upper = true
   lower = true
-  number = true
+  numeric = true
 }
