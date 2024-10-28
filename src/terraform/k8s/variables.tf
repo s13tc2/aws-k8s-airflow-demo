@@ -35,13 +35,12 @@ variable "workload_identity_role" {
 variable "secret_provider_class_name" {
   type = string
 }
-# variable "airflow_dev_connection_string" {
-#   description = "The connection string for Airflow database"
-#   type        = string
-#   sensitive   = true
-# }
-# variable "airflow_dev_fernet_key" {
-#   description = "The Fernet key for Airflow"
-#   type        = string
-#   sensitive   = true
-# }
+variable "airflow_connection_string" {
+  type        = string
+  description = "Airflow database connection string"
+}
+
+variable "airflow_fernet_key" {
+  type        = string
+  description = "Airflow Fernet key"
+}

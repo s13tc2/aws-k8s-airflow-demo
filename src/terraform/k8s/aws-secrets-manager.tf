@@ -24,13 +24,6 @@ resource "helm_release" "aws_secrets_provider" {
   depends_on = [helm_release.csi_secrets_store]
 }
 
-locals {
-  secrets = {
-    "airflow-dev-connection-string" = "DB_CONNECTION_STRING"
-    "airflow-dev-fernet-key" = "FERNET_KEY"
-  }
-}
-
 resource "null_resource" "wait_for_crds" {
   provisioner "local-exec" {
     command = "kubectl wait --for=condition=established crd/secretproviderclasses.secrets-store.csi.x-k8s.io --timeout=120s"
@@ -42,6 +35,15 @@ resource "null_resource" "wait_for_crds" {
   ]
 }
 
+# Modify your locals block
+locals {
+  secrets = {
+    "airflow-app-dev-connection-string" = var.airflow_connection_string
+    "airflow-app-dev-fernet-key" = var.airflow_fernet_key
+  }
+}
+
+# Then modify your kubernetes_manifest resource
 resource "kubernetes_manifest" "secret_provider_class" {
   manifest = {
     apiVersion = "secrets-store.csi.x-k8s.io/v1"
@@ -56,13 +58,23 @@ resource "kubernetes_manifest" "secret_provider_class" {
         objects = yamlencode([
           {
             objectName = "airflow-app-dev-connection-string"
-            objectType = "secretsmanager"
-            objectVersionLabel = "AWSCURRENT"
+            objectType = "kubernetes.io/secret"
+            objectData = [
+              {
+                key = "connection"
+                value = local.secrets["airflow-app-dev-connection-string"]
+              }
+            ]
           },
           {
             objectName = "airflow-app-dev-fernet-key"
-            objectType = "secretsmanager"
-            objectVersionLabel = "AWSCURRENT"
+            objectType = "kubernetes.io/secret"
+            objectData = [
+              {
+                key = "fernet_key"
+                value = local.secrets["airflow-app-dev-fernet-key"]
+              }
+            ]
           }
         ])
       }
@@ -70,21 +82,21 @@ resource "kubernetes_manifest" "secret_provider_class" {
         {
           data = [
             {
-              key = "airflow-app-dev-connection-string"
+              key = "connection"
               objectName = "airflow-app-dev-connection-string"
             }
           ]
-          secretName = "airflow-app-dev-connection-string"  # Update this to match
+          secretName = "airflow-app-dev-connection-string"
           type = "Opaque"
         },
         {
           data = [
             {
-              key = "airflow-app-dev-fernet-key"
+              key = "fernet_key"
               objectName = "airflow-app-dev-fernet-key"
             }
           ]
-          secretName = "airflow-app-dev-fernet-key"  # Update this to match
+          secretName = "airflow-app-dev-fernet-key"
           type = "Opaque"
         }
       ]
