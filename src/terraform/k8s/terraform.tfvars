@@ -6,3 +6,4 @@ web_airflow_image = {
   name    = "ecr-airflow-portal-dev-airflow"
   version = "2024.10.8"
 }
+secret_provider_class_name = "airflow-portal-dev-secret-provider-class"
