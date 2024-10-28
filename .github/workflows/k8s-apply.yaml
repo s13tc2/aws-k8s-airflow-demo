@@ -109,88 +109,82 @@ jobs:
         run: |
           aws eks update-kubeconfig --name ${{ needs.infra.outputs.kubernetes_cluster_name }} --region ${{ needs.infra.outputs.primary_region }}
 
-      # Display frontend and backend repositories
       - name: Display Airflow Repositories
         run: |
           echo "Airflow Repository: ${{ needs.infra.outputs.airflow_repository }}"
           echo "Airflow Repository URL: ${{ needs.infra.outputs.airflow_repository_url }}"
 
-      # - name: Set ECR Image for fleet-api and fleet-portal
+
+      # - name: Get Pods Status
       #   run: |
-      #     kubectl set image deployment/fleet-api fleet-api=292991734662.dkr.ecr.us-west-2.amazonaws.com/ecr-fleet-portal-dev-backend -n app
-      #     kubectl set image deployment/fleet-portal fleet-portal=292991734662.dkr.ecr.us-west-2.amazonaws.com/ecr-fleet-portal-dev-frontend -n app
+      #     kubectl get pods -n airflow -o wide
 
-      # Debugging Steps to inspect pod status
-      - name: Get Pods Status
-        run: |
-          kubectl get pods -n airflow -o wide
+      # - name: Check Required Secrets
+      #   run: |
+      #     echo "Checking for required secrets..."
+      #     kubectl get secrets -n airflow
+      #     kubectl get secrets airflow-dev-connection-string -n airflow
+      #     kubectl get secrets airflow-fernet-key -n airflow
 
-      - name: Check Required Secrets
-        run: |
-          echo "Checking for required secrets..."
-          kubectl get secrets -n airflow
-          kubectl get secrets airflow-dev-connection-string -n airflow
-          kubectl get secrets airflow-fernet-key -n airflow
+      # - name: Check Pod Status
+      #   run: |
+      #     echo "Checking pod status..."
+      #     kubectl get pods -n airflow -o wide
 
-      - name: Check Pod Status
-        run: |
-          echo "Checking pod status..."
-          kubectl get pods -n airflow -o wide
-
-      - name: Check Pod Status
-        run: |
-          echo "Checking pod status..."
-          kubectl get pods -n airflow -o wide
+      # - name: Check Pod Status
+      #   run: |
+      #     echo "Checking pod status..."
+      #     kubectl get pods -n airflow -o wide
           
-      - name: Get Pod Details
-        run: |
-          echo "Checking pod details..."
-          kubectl describe pod -n airflow -l app=airflow-webserver
+      # - name: Get Pod Details
+      #   run: |
+      #     echo "Checking pod details..."
+      #     kubectl describe pod -n airflow -l app=airflow-webserver
 
-      - name: Get Pod Logs
-        run: |
-          echo "Checking logs..."
-          kubectl logs -n airflow -l app=airflow-webserver --tail=100
+      # - name: Get Pod Logs
+      #   run: |
+      #     echo "Checking logs..."
+      #     kubectl logs -n airflow -l app=airflow-webserver --tail=100
 
-        # Detailed version with multiple checks
-      - name: Debug Airflow Deployment
-        run: |
-          echo "Checking pod status..."
-          kubectl get pods -n airflow -o wide
+      #   # Detailed version with multiple checks
+      # - name: Debug Airflow Deployment
+      #   run: |
+      #     echo "Checking pod status..."
+      #     kubectl get pods -n airflow -o wide
           
-          echo "\nChecking pod details..."
-          kubectl describe pod -n airflow -l app=airflow-webserver
+      #     echo "\nChecking pod details..."
+      #     kubectl describe pod -n airflow -l app=airflow-webserver
           
-          echo "\nChecking logs..."
-          kubectl logs -n airflow -l app=airflow-webserver --tail=100
+      #     echo "\nChecking logs..."
+      #     kubectl logs -n airflow -l app=airflow-webserver --tail=100
 
-      # Version with status check
-      - name: Check Airflow Pod Status
-        run: |
-          POD_NAME=$(kubectl get pods -n airflow -l app=airflow-webserver -o jsonpath='{.items[0].metadata.name}')
-          POD_STATUS=$(kubectl get pod $POD_NAME -n airflow -o jsonpath='{.status.phase}')
-          echo "Pod Name: $POD_NAME"
-          echo "Status: $POD_STATUS"
+      # # Version with status check
+      # - name: Check Airflow Pod Status
+      #   run: |
+      #     POD_NAME=$(kubectl get pods -n airflow -l app=airflow-webserver -o jsonpath='{.items[0].metadata.name}')
+      #     POD_STATUS=$(kubectl get pod $POD_NAME -n airflow -o jsonpath='{.status.phase}')
+      #     echo "Pod Name: $POD_NAME"
+      #     echo "Status: $POD_STATUS"
           
-          if [ "$POD_STATUS" != "Running" ]; then
-            echo "Pod is not running. Getting more details..."
-            kubectl describe pod $POD_NAME -n airflow
-            exit 1
-          fi
+      #     if [ "$POD_STATUS" != "Running" ]; then
+      #       echo "Pod is not running. Getting more details..."
+      #       kubectl describe pod $POD_NAME -n airflow
+      #       exit 1
+      #     fi
 
-      # Using GitHub environment variables
-      - name: Get Pods Status with Dynamic Namespace
-        run: |
-          kubectl get pods -n ${{ steps.namespace.outputs.namespace }} -o wide
+      # # Using GitHub environment variables
+      # - name: Get Pods Status with Dynamic Namespace
+      #   run: |
+      #     kubectl get pods -n ${{ steps.namespace.outputs.namespace }} -o wide
 
-      # Validate fleet-api and fleet-portal Pods
-      - name: Ensure airflow Pods are Running
-        run: |
-          kubectl get pods -l app=airflow -n airflow --field-selector=status.phase=Running || exit 1
+      # # Validate fleet-api and fleet-portal Pods
+      # - name: Ensure airflow Pods are Running
+      #   run: |
+      #     kubectl get pods -l app=airflow -n airflow --field-selector=status.phase=Running || exit 1
 
-      - name: Ensure fleet-portal Pods are Running
-        run: |
-          kubectl get pods -l app=airflow -n airflow --field-selector=status.phase=Running || exit 1
+      # - name: Ensure fleet-portal Pods are Running
+      #   run: |
+      #     kubectl get pods -l app=airflow -n airflow --field-selector=status.phase=Running || exit 1
 
 
       - name: Install kubectl
@@ -285,6 +279,8 @@ jobs:
           TF_VAR_ingress_controller_namespace: ${{ env.INGRESS_CONTROLLER_NAMESPACE }}
           TF_VAR_airflow_repository: ${{ needs.infra.outputs.airflow_repository }}
           TF_VAR_airflow_repository_url: ${{ needs.infra.outputs.airflow_repository_url }}
+          TF_VAR_airflow_connection_string_secret: airflow-${{ vars.ENVIRONMENT_NAME }}-connection-string
+          TF_VAR_airflow_fernet_key_secret: airflow-${{ vars.ENVIRONMENT_NAME }}-fernet-key
         working-directory: ./src/terraform/k8s
         run: |
           terraform init \
@@ -301,6 +297,33 @@ jobs:
       - name: Get Pods Status
         run: |
           kubectl get pods -n ${{ steps.Apply.outputs.k8s_namespace }} -o wide
+
+      - name: Check Required Secrets
+        run: |
+          echo "Checking for required secrets..."
+          kubectl get secrets -n airflow
+          kubectl get secrets airflow-dev-connection-string -n airflow
+          kubectl get secrets airflow-dev-fernet-key -n airflow
+      
+      - name: Check Pod Status
+        run: |
+          echo "Checking pod status..."
+          kubectl get pods -n airflow -o wide
+
+      - name: Check Pod Status
+        run: |
+          echo "Checking pod status..."
+          kubectl get pods -n airflow -o wide
+          
+      - name: Get Pod Details
+        run: |
+          echo "Checking pod details..."
+          kubectl describe pod -n airflow -l app=airflow-webserver
+
+      - name: Get Pod Logs
+        run: |
+          echo "Checking logs..."
+          kubectl logs -n airflow -l app=airflow-webserver --tail=100
 
       # Get fleet-api Pods and Check Images
       - name: Get airflow Pod Images
