@@ -74,7 +74,7 @@ resource "kubernetes_manifest" "secret_provider_class" {
               objectName = "airflow-app-dev-connection-string"
             }
           ]
-          secretName = "airflow-dev-connection-string"
+          secretName = "airflow-app-dev-connection-string"  # Update this to match
           type = "Opaque"
         },
         {
@@ -84,7 +84,7 @@ resource "kubernetes_manifest" "secret_provider_class" {
               objectName = "airflow-app-dev-fernet-key"
             }
           ]
-          secretName = "airflow-app-dev-fernet-key"
+          secretName = "airflow-app-dev-fernet-key"  # Update this to match
           type = "Opaque"
         }
       ]

@@ -134,6 +134,25 @@ jobs:
           echo "Checking OIDC provider URL..."
           echo "oidc_provider = $(terraform output -raw oidc_provider_url)"
 
+      - name: Debug Secret Provider Class Names
+        run: |
+          echo "Expected Secret Provider Class name:"
+          terraform output secret_provider_class_name
+          
+          echo "Actual Secret Provider Classes in cluster:"
+          kubectl get secretproviderclass -n app -o name
+
+      - name: Debug Secret Provider
+        run: |
+          echo "Checking Secret Provider Class..."
+          kubectl get secretproviderclass -n app
+          
+          echo "Checking Secret Provider Class Details..."
+          kubectl get secretproviderclass ${var.application_name}-${var.environment_name}-secret-provider-class -n app -o yaml
+          
+          echo "Checking Secrets Store CSI Driver Logs..."
+          kubectl logs -n kube-system -l app=secrets-store-csi-driver
+
       - name: Debug Service Account and Role Configuration
         run: |
           echo "1. Checking service account configuration..."
