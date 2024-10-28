@@ -117,39 +117,12 @@ jobs:
 
       - name: Get Pods Status
         run: |
-          kubectl get pods -n airflow -o wide
-
-      - name: Check Available Namespaces
+          kubectl get pods -n app -o wide
+      
+      # Validate airflow-portal Pods
+      - name: Ensure fleet-api Pods are Running
         run: |
-          echo "Checking available namespaces..."
-          kubectl get namespaces
-
-      - name: Check Required Secrets
-        run: |
-          echo "Checking for required secrets..."
-          kubectl get secrets -n airflow
-          kubectl get secrets airflow-dev-connection-string -n airflow
-          kubectl get secrets airflow-dev-fernet-key -n airflow
-
-      # - name: Check Pod Status
-      #   run: |
-      #     echo "Checking pod status..."
-      #     kubectl get pods -n airflow -o wide
-
-      - name: Check Pod Status
-        run: |
-          echo "Checking pod status..."
-          kubectl get pods -n airflow -o wide
-          
-      - name: Get Pod Details
-        run: |
-          echo "Checking pod details..."
-          kubectl describe pod -n airflow -l app=airflow-webserver
-
-      - name: Get Pod Logs
-        run: |
-          echo "Checking logs..."
-          kubectl logs -n airflow -l app=airflow-webserver --tail=100
+          kubectl get pods -l app=airflow-portal -n app --field-selector=status.phase=Running || exit 1
 
       #   # Detailed version with multiple checks
       # - name: Debug Airflow Deployment
@@ -177,20 +150,14 @@ jobs:
       #       exit 1
       #     fi
 
-      # # Using GitHub environment variables
-      # - name: Get Pods Status with Dynamic Namespace
-      #   run: |
-      #     kubectl get pods -n ${{ steps.namespace.outputs.namespace }} -o wide
+      # Using GitHub environment variables
+      - name: Get Pods Status with Dynamic Namespace
+        run: |
+          kubectl get pods -n ${{ steps.namespace.outputs.namespace }} -o wide
 
-      # # Validate fleet-api and fleet-portal Pods
-      # - name: Ensure airflow Pods are Running
-      #   run: |
-      #     kubectl get pods -l app=airflow -n airflow --field-selector=status.phase=Running || exit 1
-
-      # - name: Ensure fleet-portal Pods are Running
-      #   run: |
-      #     kubectl get pods -l app=airflow -n airflow --field-selector=status.phase=Running || exit 1
-
+      - name: Ensure airflow-portal Pods are Running
+        run: |
+          kubectl get pods -l app=airflow-portal -n ${{ steps.Apply.outputs.k8s_namespace }} --field-selector=status.phase=Running || exit 1
 
       - name: Install kubectl
         run: |
@@ -302,51 +269,6 @@ jobs:
       - name: Get Pods Status
         run: |
           kubectl get pods -n ${{ steps.Apply.outputs.k8s_namespace }} -o wide
-
-      - name: Check Required Secrets
-        run: |
-          echo "Checking for required secrets..."
-          kubectl get secrets -n airflow
-          kubectl get secrets airflow-dev-connection-string -n airflow
-          kubectl get secrets airflow-dev-fernet-key -n airflow
-      
-      - name: Check Pod Status
-        run: |
-          echo "Checking pod status..."
-          kubectl get pods -n airflow -o wide
-
-      - name: Check Pod Status
-        run: |
-          echo "Checking pod status..."
-          kubectl get pods -n airflow -o wide
-          
-      - name: Get Pod Details
-        run: |
-          echo "Checking pod details..."
-          kubectl describe pod -n airflow -l app=airflow-webserver
-
-      - name: Get Pod Logs
-        run: |
-          echo "Checking logs..."
-          kubectl logs -n airflow -l app=airflow-webserver --tail=100
-
-      # Get fleet-api Pods and Check Images
-      - name: Get airflow Pod Images
-        run: |
-          kubectl get pods -l app=airflow -n ${{ steps.Apply.outputs.k8s_namespace }} -o=jsonpath="{.items[*].spec.containers[*].image}"
-
-      # Get fleet-portal Pods and Check Images
-      - name: Get airflow Pod Images
-        run: |
-          kubectl get pods -l app=airflow -n ${{ steps.Apply.outputs.k8s_namespace }} -o=jsonpath="{.items[*].spec.containers[*].image}"
-
-      - name: Ensure airflow Pods are Running
-        run: |
-          kubectl get pods -l app=airflow -n ${{ steps.Apply.outputs.k8s_namespace }} --field-selector=status.phase=Running || exit 1
-
-      - name: Ensure airflow Pods are Running
-        run: |
-          kubectl get pods -l app=airflow -n ${{ steps.Apply.outputs.k8s_namespace }} --field-selector=status.phase=Running || exit 1
 
       - name: Get Services
         run: |
