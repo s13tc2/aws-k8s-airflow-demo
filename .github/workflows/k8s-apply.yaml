@@ -1,0 +1,311 @@
+name: k8s-Apply
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to run tests against'
+        type: environment
+        required: true
+
+env:
+  TERRAFORM_VERSION: '1.5.7'
+
+jobs:
+
+  infra:
+    runs-on: ubuntu-latest
+    outputs:
+      airflow_repository: ${{ steps.apply.outputs.airflow_repository }}
+      airflow_repository_url: ${{ steps.apply.outputs.airflow_repository_url }}
+      kubernetes_cluster_name: ${{ steps.apply.outputs.kubernetes_cluster_name }}
+      primary_region: ${{ steps.apply.outputs.primary_region }}
+      console_role: ${{ steps.apply.outputs.console_role }}
+      admin_group: ${{ steps.apply.outputs.admin_group }}
+      alb_controller_role: ${{ steps.apply.outputs.alb_controller_role }}
+      workload_identity_role: ${{ steps.apply.outputs.workload_identity_role }}
+    environment:
+      name: ${{ inputs.environment }}
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - id: setup
+        name: Setup `terraform`
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+
+      - id: apply
+        name: Terraform Apply
+        env:
+          AWS_ACCESS_KEY_ID: ${{ vars.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          BACKEND_BUCKET_NAME: ${{ vars.BUCKET_NAME }}
+          BACKEND_REGION: ${{ vars.BUCKET_REGION }}
+          BACKEND_KEY: ${{ vars.APPLICATION_NAME }}-${{ vars.ENVIRONMENT_NAME }}
+        working-directory: ${{ vars.TERRAFORM_WORKING_DIRECTORY }}
+        run: |
+          terraform init \
+            -backend-config='bucket='$BACKEND_BUCKET_NAME \
+            -backend-config='region='$BACKEND_REGION \
+            -backend-config="key=${{ vars.APPLICATION_NAME }}-${{ vars.ENVIRONMENT_NAME }}"
+
+          terraform apply -target "random_shuffle.az" -auto-approve
+          terraform apply -auto-approve
+
+          kubernetes_cluster_name=$(terraform output -raw kubernetes_cluster_name)
+          echo "kubernetes_cluster_name=$kubernetes_cluster_name" >> "$GITHUB_OUTPUT"
+
+          primary_region=$(terraform output -raw primary_region)
+          echo "primary_region=$primary_region" >> "$GITHUB_OUTPUT"
+
+          console_role=$(terraform output -raw console_role_arn)
+          echo "console_role=$console_role" >> "$GITHUB_OUTPUT"
+
+          alb_controller_role=$(terraform output -raw alb_controller_role)
+          echo "alb_controller_role=$alb_controller_role" >> "$GITHUB_OUTPUT"
+
+          workload_identity_role=$(terraform output -raw workload_identity_role)
+          echo "workload_identity_role=$workload_identity_role" >> "$GITHUB_OUTPUT"
+
+          admin_group=$(terraform output -raw admin_group_arn)
+          echo "admin_group=$admin_group" >> "$GITHUB_OUTPUT"
+
+          frontend_repository=$(terraform output -raw frontend_repository)
+          echo "frontend_repository=$frontend_repository" >> "$GITHUB_OUTPUT"
+
+          frontend_repository_url=$(terraform output -raw frontend_repository_url)
+          echo "frontend_repository_url=$frontend_repository_url" >> "$GITHUB_OUTPUT"
+
+          backend_repository=$(terraform output -raw backend_repository)
+          echo "backend_repository=$backend_repository" >> "$GITHUB_OUTPUT"
+
+          backend_repository_url=$(terraform output -raw backend_repository_url)
+          echo "backend_repository_url=$backend_repository_url" >> "$GITHUB_OUTPUT"
+
+  k8s:
+    runs-on: ubuntu-latest
+    needs: infra
+
+    environment:
+      name: ${{ inputs.environment }}
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - id: setup
+        name: Setup `terraform`
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ vars.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ needs.infra.outputs.primary_region }}
+
+      - name: Log in to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Update kubeconfig for EKS Cluster
+        run: |
+          aws eks update-kubeconfig --name ${{ needs.infra.outputs.kubernetes_cluster_name }} --region ${{ needs.infra.outputs.primary_region }}
+
+      # Display frontend and backend repositories
+      - name: Display Frontend and Backend Repositories
+        run: |
+          echo "Frontend Repository: ${{ needs.infra.outputs.airflow_repository }}"
+          echo "Frontend Repository URL: ${{ needs.infra.outputs.airflow_repository_url }}"
+
+      # - name: Set ECR Image for fleet-api and fleet-portal
+      #   run: |
+      #     kubectl set image deployment/fleet-api fleet-api=292991734662.dkr.ecr.us-west-2.amazonaws.com/ecr-fleet-portal-dev-backend -n app
+      #     kubectl set image deployment/fleet-portal fleet-portal=292991734662.dkr.ecr.us-west-2.amazonaws.com/ecr-fleet-portal-dev-frontend -n app
+
+      # Debugging Steps to inspect pod status
+      - name: Get Pods Status
+        run: |
+          kubectl get pods -n app -o wide
+
+      # Validate fleet-api and fleet-portal Pods
+      - name: Ensure airflow Pods are Running
+        run: |
+          kubectl get pods -l app=airflow -n app --field-selector=status.phase=Running || exit 1
+
+      - name: Ensure fleet-portal Pods are Running
+        run: |
+          kubectl get pods -l app=airflow -n app --field-selector=status.phase=Running || exit 1
+
+
+      - name: Install kubectl
+        run: |
+          curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+          chmod +x kubectl
+          sudo mv kubectl /usr/local/bin/
+          kubectl version --client
+
+      - name: Install Helm
+        run: |
+          curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3
+          chmod +x get_helm.sh
+          ./get_helm.sh
+          helm version
+
+      - name: Add Helm Repositories
+        run: |
+          helm repo add secrets-store-csi-driver https://kubernetes-sigs.github.io/secrets-store-csi-driver/charts
+          helm repo add aws-secrets-store https://aws.github.io/secrets-store-csi-driver-provider-aws
+          helm repo add apache-airflow https://airflow.apache.org
+          helm repo update
+
+      - name: Install/Upgrade Secrets Store CSI Driver
+        run: |
+          helm upgrade --install csi-secrets-store secrets-store-csi-driver/secrets-store-csi-driver \
+            --namespace kube-system \
+            --create-namespace \
+            --set syncSecret.enabled=true \
+            --set installCRDs=true
+
+      - name: Install/Upgrade AWS Secrets Provider
+        run: |
+          helm upgrade --install secrets-provider-aws aws-secrets-store/secrets-store-csi-driver-provider-aws \
+            --namespace kube-system
+
+      - name: Install/Upgrade Airflow
+        run: |
+          helm upgrade --install airflow apache-airflow/airflow \
+            --namespace airflow \
+            --create-namespace \
+            --set webserver.defaultUser.enabled=true \
+            --set webserver.defaultUser.username=admin \
+            --set webserver.defaultUser.password=admin
+                
+      - name: Wait for CRDs to be Established
+        run: |
+          kubectl wait --for=condition=established crd secretproviderclasses.secrets-store.csi.x-k8s.io --timeout=120s
+          kubectl wait --for=condition=established crd secretproviderclasspodstatuses.secrets-store.csi.x-k8s.io --timeout=120s
+
+      - id: Apply
+        name: Terraform Apply
+        env:
+          AWS_ACCESS_KEY_ID: ${{ vars.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ needs.infra.outputs.primary_region }}
+          AWS_DEFAULT_REGION: ${{ needs.infra.outputs.primary_region }}
+          BACKEND_BUCKET_NAME: ${{ vars.BUCKET_NAME }}
+          BACKEND_REGION: ${{ vars.BUCKET_REGION }}
+          BACKEND_KEY: ${{ vars.APPLICATION_NAME }}-${{ vars.ENVIRONMENT_NAME }}-k8s
+          TF_VAR_application_name: ${{ vars.APPLICATION_NAME }}
+          TF_VAR_environment_name: ${{ vars.ENVIRONMENT_NAME }}
+          TF_VAR_cluster_name: ${{ needs.infra.outputs.kubernetes_cluster_name }}
+          TF_VAR_primary_region: ${{ needs.infra.outputs.primary_region }}
+          TF_VAR_alb_controller_role: ${{ needs.infra.outputs.alb_controller_role }}
+          TF_VAR_workload_identity_role: ${{ needs.infra.outputs.workload_identity_role }}
+          TF_VAR_secret_name: ${{ vars.APPLICATION_NAME }}-${{ vars.ENVIRONMENT_NAME }}-connection-string
+          # TF_VAR_secret_key: ${{ secrets.DB_CONNECTION_STRING_KEY }}
+          TF_VAR_k8s_namespace: ${{ env.K8S_NAMESPACE }}
+          TF_VAR_ingress_controller_namespace: ${{ env.INGRESS_CONTROLLER_NAMESPACE }}
+          TF_VAR_airflow_repository: ${{ needs.infra.outputs.airflow_repository }}
+          TF_VAR_airflow_repository_url: ${{ needs.infra.outputs.airflow_repository_url }}
+          # TF_VAR_web_api_image_name: ${{ env.WEB_API_IMAGE_NAME }}
+          # TF_VAR_web_api_image_version: ${{ env.WEB_API_IMAGE_VERSION }}
+          # TF_VAR_web_app_image_name: ${{ env.WEB_APP_IMAGE_NAME }}
+          # TF_VAR_web_app_image_version: ${{ env.WEB_APP_IMAGE_VERSION }}
+        working-directory: ./src/terraform/k8s
+        run: |
+          terraform init \
+            -backend-config='bucket='$BACKEND_BUCKET_NAME \
+            -backend-config='region='$BACKEND_REGION \
+            -backend-config="key=${{ vars.APPLICATION_NAME }}-${{ vars.ENVIRONMENT_NAME }}-k8s"
+              
+          terraform apply -auto-approve
+
+          k8s_namespace=$(terraform output -raw k8s_namespace)
+          echo "k8s_namespace=$k8s_namespace" >> "$GITHUB_OUTPUT"
+
+      # Debugging Steps Start Here
+      - name: Get Pods Status
+        run: |
+          kubectl get pods -n ${{ steps.Apply.outputs.k8s_namespace }} -o wide
+
+      # Get fleet-api Pods and Check Images
+      - name: Get airflow Pod Images
+        run: |
+          kubectl get pods -l app=airflow -n ${{ steps.Apply.outputs.k8s_namespace }} -o=jsonpath="{.items[*].spec.containers[*].image}"
+
+      # Get fleet-portal Pods and Check Images
+      - name: Get airflow Pod Images
+        run: |
+          kubectl get pods -l app=airflow -n ${{ steps.Apply.outputs.k8s_namespace }} -o=jsonpath="{.items[*].spec.containers[*].image}"
+
+      - name: Ensure airflow Pods are Running
+        run: |
+          kubectl get pods -l app=airflow -n ${{ steps.Apply.outputs.k8s_namespace }} --field-selector=status.phase=Running || exit 1
+
+      - name: Ensure airflow Pods are Running
+        run: |
+          kubectl get pods -l app=airflow -n ${{ steps.Apply.outputs.k8s_namespace }} --field-selector=status.phase=Running || exit 1
+
+      - name: Get Services
+        run: |
+          kubectl get services -n ${{ steps.Apply.outputs.k8s_namespace }}
+      
+      - name: Validate airflow Service Endpoints
+        run: |
+          kubectl get endpoints airflow-service -n ${{ steps.Apply.outputs.k8s_namespace }} || exit 1
+
+      - name: Validate airflow Service Endpoints
+        run: |
+          kubectl get endpoints airflow-service -n ${{ steps.Apply.outputs.k8s_namespace }} || exit 1
+
+      - name: Get Events
+        run: |
+          kubectl get events -n ${{ steps.Apply.outputs.k8s_namespace }} --sort-by='.lastTimestamp'
+
+      - name: Get Application Pod Logs
+        run: |
+          for pod in $(kubectl get pods -n ${{ steps.Apply.outputs.k8s_namespace }} -l app=airflow -o jsonpath='{.items[*].metadata.name}'); do
+            echo "Logs for airflow pod: $pod"
+            kubectl logs $pod -n ${{ steps.Apply.outputs.k8s_namespace }}
+          done
+          for pod in $(kubectl get pods -n ${{ steps.Apply.outputs.k8s_namespace }} -l app=airflow -o jsonpath='{.items[*].metadata.name}'); do
+            echo "Logs for airflow pod: $pod"
+            kubectl logs $pod -n ${{ steps.Apply.outputs.k8s_namespace }}
+          done
+
+      - name: Setup eksctl
+        run: |
+          ARCH=amd64
+          PLATFORM=$(uname -s)_$ARCH
+
+          curl -sLO "https://github.com/eksctl-io/eksctl/releases/latest/download/eksctl_$PLATFORM.tar.gz"
+          curl -sL "https://github.com/eksctl-io/eksctl/releases/latest/download/eksctl_checksums.txt" | grep $PLATFORM | sha256sum --check
+
+          tar -xzf eksctl_$PLATFORM.tar.gz -C /tmp
+          sudo mv /tmp/eksctl /usr/local/bin
+          rm eksctl_$PLATFORM.tar.gz
+
+          eksctl version
+
+      - name: Test eksctl command
+        run: |
+          eksctl get clusters
+          eksctl get iamidentitymapping --cluster ${{ needs.infra.outputs.kubernetes_cluster_name }} --region=${{ needs.infra.outputs.primary_region }}
+
+          eksctl create iamidentitymapping \
+            --cluster ${{ needs.infra.outputs.kubernetes_cluster_name }} \
+            --region=${{ needs.infra.outputs.primary_region }} \
+            --arn ${{ needs.infra.outputs.console_role }} \
+            --group eks-console-dashboard-full-access-group \
+            --no-duplicate-arns
+
+          eksctl create iamidentitymapping \
+            --cluster ${{ needs.infra.outputs.kubernetes_cluster_name }} \
+            --region=${{ needs.infra.outputs.primary_region }} \
+            --arn arn:aws:iam::312344499806:user/markti \
+            --group eks-console-dashboard-restricted-access-group \
+            --no-duplicate-arns
