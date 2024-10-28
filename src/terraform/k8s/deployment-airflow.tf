@@ -33,7 +33,7 @@ resource "kubernetes_deployment" "airflow" {
             driver    = "secrets-store.csi.k8s.io"
             read_only = true
             volume_attributes = {
-              "secretProviderClass" = "${var.application_name}-app-${var.environment_name}-secret-provider-class"
+              "secretProviderClass" = "${var.application_name}-${var.environment_name}-secret-provider-class"
             }
           }
         }
