@@ -114,31 +114,6 @@ jobs:
           echo "Checking AWS Secrets Manager..."
           aws secretsmanager list-secrets | grep airflow-portal-dev
 
-      # - name: Update Deployment Image
-      #   run: |
-      #     # Update the deployment image
-      #     kubectl set image deployment/airflow-webserver \
-      #       airflow-webserver=292991734662.dkr.ecr.us-west-2.amazonaws.com/ecr-airflow-portal-dev-airflow:2024.10.13 \
-      #       -n app
-
-      #     # Force a rollout restart to ensure it picks up the new image
-      #     kubectl rollout restart deployment/airflow-webserver -n app
-          
-      #     # Wait for the rollout to complete
-      #     kubectl rollout status deployment/airflow-webserver -n app --timeout=300s
-
-      - name: Verify Image Version
-        run: |
-          echo "Current image in deployment:"
-          kubectl get deployment airflow-webserver -n app -o=jsonpath='{.spec.template.spec.containers[0].image}'
-          
-          echo "\nPod image versions:"
-          kubectl get pods -n app -l app=airflow-webserver -o=jsonpath='{.items[*].spec.containers[0].image}'
-
-      - name: Clean Up Old Images
-        run: |
-          # Delete pods with old image version to force recreation
-          kubectl delete pods -n app -l app=airflow-webserver --force --grace-period=0
 
       - name: Debug Secret Provider Class
         run: |
@@ -158,47 +133,47 @@ jobs:
       #     # Wait a few seconds to ensure resources are fully deleted
       #     sleep 10
       
-      - name: List All Pods
-        run: |
-          kubectl get pods --all-namespaces -o wide
+      # - name: List All Pods
+      #   run: |
+      #     kubectl get pods --all-namespaces -o wide
 
-      - name: Debug Container Config Error
-        run: |
-          echo "Pod Description:"
-          kubectl describe pod -n app airflow-webserver-8cd7c57cc-f4b5f
+      # - name: Debug Container Config Error
+      #   run: |
+      #     echo "Pod Description:"
+      #     kubectl describe pod -n app airflow-webserver-8cd7c57cc-f4b5f
           
-          echo "\nPod Events:"
-          kubectl get events -n app --sort-by='.lastTimestamp' | grep airflow-webserver
+      #     echo "\nPod Events:"
+      #     kubectl get events -n app --sort-by='.lastTimestamp' | grep airflow-webserver
           
-          echo "\nContainer Logs (if any):"
-          kubectl logs -n app airflow-webserver-8cd7c57cc-f4b5f --previous
+      #     echo "\nContainer Logs (if any):"
+      #     kubectl logs -n app airflow-webserver-8cd7c57cc-f4b5f --previous
           
-          echo "\nDeployment Configuration:"
-          kubectl get deployment -n app airflow-webserver -o yaml
+      #     echo "\nDeployment Configuration:"
+      #     kubectl get deployment -n app airflow-webserver -o yaml
 
-      - name: Debug Secret Provider Class Names
-        run: |
-          echo "Expected Secret Provider Class name:"
-          terraform output secret_provider_class_name
+      # - name: Debug Secret Provider Class Names
+      #   run: |
+      #     echo "Expected Secret Provider Class name:"
+      #     terraform output secret_provider_class_name
           
-          echo "Actual Secret Provider Classes in cluster:"
-          kubectl get secretproviderclass -n app -o name
+      #     echo "Actual Secret Provider Classes in cluster:"
+      #     kubectl get secretproviderclass -n app -o name
 
-      - name: Debug Secret Provider
-        run: |
-          echo "Checking Secret Provider Class..."
-          kubectl get secretproviderclass -n app
+      # - name: Debug Secret Provider
+      #   run: |
+      #     echo "Checking Secret Provider Class..."
+      #     kubectl get secretproviderclass -n app
           
-          echo "Checking Secret Provider Class Details..."
-          kubectl get secretproviderclass airflow-portal-dev-secret-provider-class -n app -o yaml
+      #     echo "Checking Secret Provider Class Details..."
+      #     kubectl get secretproviderclass airflow-portal-dev-secret-provider-class -n app -o yaml
           
-          echo "Checking Secrets Store CSI Driver Logs..."
-          kubectl logs -n kube-system -l app=secrets-store-csi-driver
+      #     echo "Checking Secrets Store CSI Driver Logs..."
+      #     kubectl logs -n kube-system -l app=secrets-store-csi-driver
           
 
-      - name: Get Pods Status
-        run: |
-          kubectl get pods -n app -o wide
+      # - name: Get Pods Status
+      #   run: |
+      #     kubectl get pods -n app -o wide
 
       - name: Install kubectl
         run: |
@@ -246,14 +221,14 @@ jobs:
           kubectl wait --for=condition=established crd secretproviderclasses.secrets-store.csi.x-k8s.io --timeout=120s
           kubectl wait --for=condition=established crd secretproviderclasspodstatuses.secrets-store.csi.x-k8s.io --timeout=120s
         
-      # - name: Delete Existing Resources
-      #   run: |
-      #     kubectl delete deployment airflow-webserver -n app --ignore-not-found=true
-      #     kubectl delete ingress airflow-webserver-ingress -n app --ignore-not-found=true
-      #     kubectl delete service airflow-webserver-service -n app --ignore-not-found=true
+      - name: Delete Existing Resources
+        run: |
+          kubectl delete deployment airflow-webserver -n app --ignore-not-found=true
+          kubectl delete ingress airflow-webserver-ingress -n app --ignore-not-found=true
+          kubectl delete service airflow-webserver-service -n app --ignore-not-found=true
           
-      #     # Wait a few seconds to ensure resources are fully deleted
-      #     sleep 10
+          # Wait a few seconds to ensure resources are fully deleted
+          sleep 10
 
       - id: Apply
         name: Terraform Apply
