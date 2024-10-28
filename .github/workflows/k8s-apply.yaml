@@ -184,21 +184,21 @@ jobs:
       #     helm repo remove aws-secrets-store
       #     helm repo remove apache-airflow
 
-      - name: Uninstall AWS Secrets Provider
-        run: |
-          helm uninstall secrets-provider-aws \
-            --namespace kube-system
+      # - name: Uninstall AWS Secrets Provider
+      #   run: |
+      #     helm uninstall secrets-provider-aws \
+      #       --namespace kube-system
 
-      - name: Uninstall Secrets Store CSI Driver
-        run: |
-          helm uninstall csi-secrets-store \
-            --namespace kube-system
+      # - name: Uninstall Secrets Store CSI Driver
+      #   run: |
+      #     helm uninstall csi-secrets-store \
+      #       --namespace kube-system
 
-      - name: Uninstall Airflow
-        run: |
-          helm uninstall airflow \
-            --namespace airflow
-          kubectl delete namespace airflow
+      # - name: Uninstall Airflow
+      #   run: |
+      #     helm uninstall airflow \
+      #       --namespace airflow
+      #     kubectl delete namespace airflow
                 
       - name: Wait for CRDs to be Established
         run: |
