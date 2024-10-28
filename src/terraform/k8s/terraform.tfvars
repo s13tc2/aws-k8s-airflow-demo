@@ -7,3 +7,4 @@ web_airflow_image = {
   version = "2024.10.8"
 }
 secret_provider_class_name = "airflow-portal-dev-secret-provider-class"
+airflow_fernet_key = "Q7c8Hy_FAiUKTwIxN7yWgr8ZL0uogBTitrMtLLpCFsY="
