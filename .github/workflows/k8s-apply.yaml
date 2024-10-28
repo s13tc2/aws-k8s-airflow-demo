@@ -199,15 +199,11 @@ jobs:
           TF_VAR_alb_controller_role: ${{ needs.infra.outputs.alb_controller_role }}
           TF_VAR_workload_identity_role: ${{ needs.infra.outputs.workload_identity_role }}
           TF_VAR_secret_name: ${{ vars.APPLICATION_NAME }}-${{ vars.ENVIRONMENT_NAME }}-connection-string
-          # TF_VAR_secret_key: ${{ secrets.DB_CONNECTION_STRING_KEY }}
+          TF_VAR_secret_key: ${{ secrets.DB_CONNECTION_STRING_KEY }}
           TF_VAR_k8s_namespace: ${{ env.K8S_NAMESPACE }}
           TF_VAR_ingress_controller_namespace: ${{ env.INGRESS_CONTROLLER_NAMESPACE }}
           TF_VAR_airflow_repository: ${{ needs.infra.outputs.airflow_repository }}
           TF_VAR_airflow_repository_url: ${{ needs.infra.outputs.airflow_repository_url }}
-          # TF_VAR_web_api_image_name: ${{ env.WEB_API_IMAGE_NAME }}
-          # TF_VAR_web_api_image_version: ${{ env.WEB_API_IMAGE_VERSION }}
-          # TF_VAR_web_app_image_name: ${{ env.WEB_APP_IMAGE_NAME }}
-          # TF_VAR_web_app_image_version: ${{ env.WEB_APP_IMAGE_VERSION }}
         working-directory: ./src/terraform/k8s
         run: |
           terraform init \

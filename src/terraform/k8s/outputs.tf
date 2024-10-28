@@ -14,5 +14,8 @@ output "web_airflow_version" {
   value = var.web_airflow_image.version
 }
 
+output "secret_key" {
+    value = var.secret_key
+}
 
 
