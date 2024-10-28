@@ -122,41 +122,6 @@ jobs:
         run: |
           kubectl get pods --all-namespaces -o wide
 
-      #   # Detailed version with multiple checks
-      # - name: Debug Airflow Deployment
-      #   run: |
-      #     echo "Checking pod status..."
-      #     kubectl get pods -n airflow -o wide
-          
-      #     echo "\nChecking pod details..."
-      #     kubectl describe pod -n airflow -l app=airflow-webserver
-          
-      #     echo "\nChecking logs..."
-      #     kubectl logs -n airflow -l app=airflow-webserver --tail=100
-
-      # # Version with status check
-      # - name: Check Airflow Pod Status
-      #   run: |
-      #     POD_NAME=$(kubectl get pods -n airflow -l app=airflow-webserver -o jsonpath='{.items[0].metadata.name}')
-      #     POD_STATUS=$(kubectl get pod $POD_NAME -n airflow -o jsonpath='{.status.phase}')
-      #     echo "Pod Name: $POD_NAME"
-      #     echo "Status: $POD_STATUS"
-          
-      #     if [ "$POD_STATUS" != "Running" ]; then
-      #       echo "Pod is not running. Getting more details..."
-      #       kubectl describe pod $POD_NAME -n airflow
-      #       exit 1
-      #     fi
-
-      # # Using GitHub environment variables
-      # - name: Get Pods Status with Dynamic Namespace
-      #   run: |
-      #     kubectl get pods -n app -o wide
-
-      # - name: Ensure airflow-portal Pods are Running
-      #   run: |
-      #     kubectl get pods -l app=app -n ${{ steps.Apply.outputs.k8s_namespace }} --field-selector=status.phase=Running || exit 1
-
       - name: Install kubectl
         run: |
           curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
@@ -189,44 +154,21 @@ jobs:
         run: |
           helm upgrade --install secrets-provider-aws aws-secrets-store/secrets-store-csi-driver-provider-aws \
             --namespace kube-system
-
-      # - name: Install/Upgrade Airflow
-      #   run: |
-      #     helm upgrade --install airflow apache-airflow/airflow \
-      #       --namespace airflow \
-      #       --create-namespace \
-      #       --set webserver.defaultUser.enabled=true \
-      #       --set webserver.defaultUser.username=admin \
-      #       --set webserver.defaultUser.password=admin
-
-      
-      # - name: Remove Helm Repositories
-      #   run: |
-      #     helm repo remove secrets-store-csi-driver
-      #     helm repo remove aws-secrets-store
-      #     helm repo remove apache-airflow
-
-      # - name: Uninstall AWS Secrets Provider
-      #   run: |
-      #     helm uninstall secrets-provider-aws \
-      #       --namespace kube-system
-
-      # - name: Uninstall Secrets Store CSI Driver
-      #   run: |
-      #     helm uninstall csi-secrets-store \
-      #       --namespace kube-system
-
-      # - name: Uninstall Airflow
-      #   run: |
-      #     helm uninstall airflow \
-      #       --namespace airflow
-      #     kubectl delete namespace airflow
                 
       - name: Wait for CRDs to be Established
         run: |
           kubectl wait --for=condition=established crd secretproviderclasses.secrets-store.csi.x-k8s.io --timeout=120s
           kubectl wait --for=condition=established crd secretproviderclasspodstatuses.secrets-store.csi.x-k8s.io --timeout=120s
-
+        
+      - name: Delete Existing Resources
+        run: |
+          kubectl delete deployment airflow-webserver -n app --ignore-not-found=true
+          kubectl delete ingress airflow-webserver-ingress -n app --ignore-not-found=true
+          kubectl delete service airflow-webserver-service -n app --ignore-not-found=true
+          
+          # Wait a few seconds to ensure resources are fully deleted
+          sleep 10
+          
       - id: Apply
         name: Terraform Apply
         env:
