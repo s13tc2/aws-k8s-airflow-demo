@@ -73,16 +73,10 @@ jobs:
           echo "admin_group=$admin_group" >> "$GITHUB_OUTPUT"
 
           frontend_repository=$(terraform output -raw frontend_repository)
-          echo "frontend_repository=$frontend_repository" >> "$GITHUB_OUTPUT"
+          echo "airflow_repository=$airflow_repository" >> "$GITHUB_OUTPUT"
 
           frontend_repository_url=$(terraform output -raw frontend_repository_url)
-          echo "frontend_repository_url=$frontend_repository_url" >> "$GITHUB_OUTPUT"
-
-          backend_repository=$(terraform output -raw backend_repository)
-          echo "backend_repository=$backend_repository" >> "$GITHUB_OUTPUT"
-
-          backend_repository_url=$(terraform output -raw backend_repository_url)
-          echo "backend_repository_url=$backend_repository_url" >> "$GITHUB_OUTPUT"
+          echo "airflow_repository_url=$airflow_repository_url" >> "$GITHUB_OUTPUT"
 
   k8s:
     runs-on: ubuntu-latest
