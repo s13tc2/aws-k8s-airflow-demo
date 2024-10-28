@@ -178,11 +178,11 @@ jobs:
       #       --set webserver.defaultUser.password=admin
 
       
-      - name: Remove Helm Repositories
-        run: |
-          helm repo remove secrets-store-csi-driver
-          helm repo remove aws-secrets-store
-          helm repo remove apache-airflow
+      # - name: Remove Helm Repositories
+      #   run: |
+      #     helm repo remove secrets-store-csi-driver
+      #     helm repo remove aws-secrets-store
+      #     helm repo remove apache-airflow
 
       - name: Uninstall AWS Secrets Provider
         run: |
