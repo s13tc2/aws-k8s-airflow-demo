@@ -113,14 +113,14 @@ jobs:
         run: |
           kubectl get pods -n app -o wide
 
-      - name: Delete Existing Resources
-        run: |
-          kubectl delete deployment airflow-webserver -n app --ignore-not-found=true
-          kubectl delete ingress airflow-webserver-ingress -n app --ignore-not-found=true
-          kubectl delete service airflow-webserver-service -n app --ignore-not-found=true
+      # - name: Delete Existing Resources
+      #   run: |
+      #     kubectl delete deployment airflow-webserver -n app --ignore-not-found=true
+      #     kubectl delete ingress airflow-webserver-ingress -n app --ignore-not-found=true
+      #     kubectl delete service airflow-webserver-service -n app --ignore-not-found=true
           
-          # Wait a few seconds to ensure resources are fully deleted
-          sleep 10
+      #     # Wait a few seconds to ensure resources are fully deleted
+      #     sleep 10
       
       - name: List All Pods
         run: |
@@ -144,18 +144,11 @@ jobs:
           
           echo "Checking Secrets Store CSI Driver Logs..."
           kubectl logs -n kube-system -l app=secrets-store-csi-driver
+          
 
-       # Add these new debug steps here:
-      - name: Debug Pod Status
+      - name: Get Pods Status
         run: |
-          echo "Checking pod status..."
-          kubectl get pods -n app -l app=airflow-webserver
-          
-          echo "Checking pod details..."
-          kubectl describe pod -n app -l app=airflow-webserver
-          
-          echo "Checking pod logs..."
-          kubectl logs -n app -l app=airflow-webserver
+          kubectl get pods -n app -o wide
 
       - name: Install kubectl
         run: |
