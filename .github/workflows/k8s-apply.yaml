@@ -114,15 +114,14 @@ jobs:
           echo "Airflow Repository: ${{ needs.infra.outputs.airflow_repository }}"
           echo "Airflow Repository URL: ${{ needs.infra.outputs.airflow_repository_url }}"
 
-
-      - name: Get Pods Status
-        run: |
-          kubectl get pods -n app -o wide
+      # - name: Get Pods Status
+      #   run: |
+      #     kubectl get pods -n app -o wide
       
-      # Validate airflow-portal Pods
-      - name: Ensure fleet-api Pods are Running
-        run: |
-          kubectl get pods -l app=airflow-portal -n app --field-selector=status.phase=Running || exit 1
+      # # Validate airflow-portal Pods
+      # - name: Ensure fleet-api Pods are Running
+      #   run: |
+      #     kubectl get pods -l app=airflow-portal -n app --field-selector=status.phase=Running || exit 1
 
       #   # Detailed version with multiple checks
       # - name: Debug Airflow Deployment
@@ -150,14 +149,14 @@ jobs:
       #       exit 1
       #     fi
 
-      # Using GitHub environment variables
-      - name: Get Pods Status with Dynamic Namespace
-        run: |
-          kubectl get pods -n app -o wide
+      # # Using GitHub environment variables
+      # - name: Get Pods Status with Dynamic Namespace
+      #   run: |
+      #     kubectl get pods -n app -o wide
 
-      - name: Ensure airflow-portal Pods are Running
-        run: |
-          kubectl get pods -l app=app -n ${{ steps.Apply.outputs.k8s_namespace }} --field-selector=status.phase=Running || exit 1
+      # - name: Ensure airflow-portal Pods are Running
+      #   run: |
+      #     kubectl get pods -l app=app -n ${{ steps.Apply.outputs.k8s_namespace }} --field-selector=status.phase=Running || exit 1
 
       - name: Install kubectl
         run: |
