@@ -119,6 +119,11 @@ jobs:
         run: |
           kubectl get pods -n airflow -o wide
 
+      - name: Check Available Namespaces
+        run: |
+          echo "Checking available namespaces..."
+          kubectl get namespaces
+
       - name: Check Required Secrets
         run: |
           echo "Checking for required secrets..."
