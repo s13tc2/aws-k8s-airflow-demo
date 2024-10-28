@@ -11,14 +11,6 @@ resource "kubernetes_deployment" "airflow" {
   spec {
     replicas = 1
 
-    strategy {
-      type = "RollingUpdate"
-      rolling_update {
-        max_surge       = 1
-        max_unavailable = 0
-      }
-    }
-
     selector {
       match_labels = {
         app = local.airflow_name
@@ -46,27 +38,9 @@ resource "kubernetes_deployment" "airflow" {
           }
         }
 
-        volume {
-          name = "pod-template"
-          config_map {
-            name = kubernetes_config_map.pod_template.metadata[0].name
-          }
-        }
-
         container {
           image = "${data.aws_caller_identity.current.account_id}.dkr.ecr.${var.primary_region}.amazonaws.com/${var.web_airflow_image.name}:${var.web_airflow_image.version}"
           name  = local.airflow_name
-
-          resources {
-            limits = {
-              cpu    = "1000m"
-              memory = "1Gi"
-            }
-            requests = {
-              cpu    = "500m"
-              memory = "512Mi"
-            }
-          }
 
           port {
             container_port = 8080
@@ -76,31 +50,6 @@ resource "kubernetes_deployment" "airflow" {
             name       = "secrets-store-inline"
             mount_path = "/mnt/secrets-store"
             read_only  = true
-          }
-
-          volume_mount {
-            name       = "pod-template"
-            mount_path = "/opt/airflow/pod_template.yaml"
-            sub_path   = "pod_template.yaml"
-            read_only  = true
-          }
-
-          liveness_probe {
-            http_get {
-              path = "/health"
-              port = 8080
-            }
-            initial_delay_seconds = 60
-            period_seconds       = 20
-          }
-
-          readiness_probe {
-            http_get {
-              path = "/health"
-              port = 8080
-            }
-            initial_delay_seconds = 30
-            period_seconds       = 10
           }
 
           env_from {
@@ -131,33 +80,7 @@ resource "kubernetes_deployment" "airflow" {
 
           env {
             name  = "AIRFLOW__CORE__EXECUTOR"
-            value = "KubernetesExecutor"  # Changed from LocalExecutor
-          }
-
-          # Add K8s configuration
-          env {
-            name  = "AIRFLOW__KUBERNETES__NAMESPACE"
-            value = var.k8s_namespace
-          }
-
-          env {
-            name  = "AIRFLOW__KUBERNETES__WORKER_CONTAINER_REPOSITORY"
-            value = "${data.aws_caller_identity.current.account_id}.dkr.ecr.${var.primary_region}.amazonaws.com/${var.web_airflow_image.name}"
-          }
-
-          env {
-            name  = "AIRFLOW__KUBERNETES__WORKER_CONTAINER_TAG"
-            value = var.web_airflow_image.version
-          }
-
-          env {
-            name  = "AIRFLOW__KUBERNETES__DELETE_WORKER_PODS"
-            value = "True"
-          }
-
-          env {
-            name  = "AIRFLOW__KUBERNETES__POD_TEMPLATE_FILE"
-            value = "/opt/airflow/pod_template.yaml"
+            value = "KubernetesExecutor"
           }
         }
       }
