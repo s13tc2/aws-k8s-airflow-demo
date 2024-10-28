@@ -108,74 +108,45 @@ jobs:
       - name: Update kubeconfig for EKS Cluster
         run: |
           aws eks update-kubeconfig --name ${{ needs.infra.outputs.kubernetes_cluster_name }} --region ${{ needs.infra.outputs.primary_region }}
-
-      # - name: Display Airflow Repositories
-      #   run: |
-      #     echo "Airflow Repository: ${{ needs.infra.outputs.airflow_repository }}"
-      #     echo "Airflow Repository URL: ${{ needs.infra.outputs.airflow_repository_url }}"
-
       
-
       - name: Get Pods Status
         run: |
           kubectl get pods -n app -o wide
-
-      # - name: Restart Airflow Webserver
-      #   run: |
-      #     kubectl delete pod -n app -l app.kubernetes.io/component=webserver
-      #     # Optional: wait for new pod to be ready
-      #     kubectl wait --for=condition=ready pod -l app.kubernetes.io/component=webserver -n app --timeout=300s
-
-      # - name: Get Pods Status
-      #   run: |
-      #     kubectl get pods -n app -o wide
       
-      # - name: List All Pods
-      #   run: |
-      #     kubectl get pods --all-namespaces -o wide
+      - name: List All Pods
+        run: |
+          kubectl get pods --all-namespaces -o wide
 
-      # - name: Get Outputs
-      #   run: |
-
-      #     echo "Checking k8s namespace variable..."
-      #     echo "k8s_namespace = $(terraform output -raw k8s_namespace)"
+      - name: Debug Secret Provider Class Names
+        run: |
+          echo "Expected Secret Provider Class name:"
+          terraform output secret_provider_class_name
           
-      #     echo "Checking service account name variable..."
-      #     echo "k8s_service_account_name = $(terraform output -raw k8s_service_account_name)"
-          
-      #     echo "Checking OIDC provider URL..."
-      #     echo "oidc_provider = $(terraform output -raw oidc_provider_url)"
-
-      # - name: Debug Secret Provider Class Names
-      #   run: |
-      #     echo "Expected Secret Provider Class name:"
-      #     terraform output secret_provider_class_name
-          
-      #     echo "Actual Secret Provider Classes in cluster:"
-      #     kubectl get secretproviderclass -n app -o name
+          echo "Actual Secret Provider Classes in cluster:"
+          kubectl get secretproviderclass -n app -o name
 
       # - name: Debug Secret Provider
-      #   run: |
-      #     echo "Checking Secret Provider Class..."
-      #     kubectl get secretproviderclass -n app
+        run: |
+          echo "Checking Secret Provider Class..."
+          kubectl get secretproviderclass -n app
           
-      #     echo "Checking Secret Provider Class Details..."
-      #     kubectl get secretproviderclass airflow-app-dev-secret-provider-class -n app -o yaml
+          echo "Checking Secret Provider Class Details..."
+          kubectl get secretproviderclass airflow-app-dev-secret-provider-class -n app -o yaml
           
-      #     echo "Checking Secrets Store CSI Driver Logs..."
-      #     kubectl logs -n kube-system -l app=secrets-store-csi-driver
+          echo "Checking Secrets Store CSI Driver Logs..."
+          kubectl logs -n kube-system -l app=secrets-store-csi-driver
 
-      #  # Add these new debug steps here:
-      # - name: Debug Pod Status
-      #   run: |
-      #     echo "Checking pod status..."
-      #     kubectl get pods -n app -l app=airflow-webserver
+       # Add these new debug steps here:
+      - name: Debug Pod Status
+        run: |
+          echo "Checking pod status..."
+          kubectl get pods -n app -l app=airflow-webserver
           
-      #     echo "Checking pod details..."
-      #     kubectl describe pod -n app -l app=airflow-webserver
+          echo "Checking pod details..."
+          kubectl describe pod -n app -l app=airflow-webserver
           
-      #     echo "Checking pod logs..."
-      #     kubectl logs -n app -l app=airflow-webserver
+          echo "Checking pod logs..."
+          kubectl logs -n app -l app=airflow-webserver
 
       - name: Install kubectl
         run: |
