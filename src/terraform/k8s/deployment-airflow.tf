@@ -62,8 +62,8 @@ resource "kubernetes_deployment" "airflow" {
             name = "AIRFLOW__CORE__SQL_ALCHEMY_CONN"
             value_from {
               secret_key_ref {
-                name = "airflow-dev-connection-string"
-                key  = "airflow-dev-connection-string"
+                name = "airflow-app-dev-connection-string"
+                key  = "airflow-app-dev-connection-string"
               }
             }
           }
@@ -72,8 +72,8 @@ resource "kubernetes_deployment" "airflow" {
             name = "AIRFLOW__CORE__FERNET_KEY"
             value_from {
               secret_key_ref {
-                name = "airflow-dev-fernet-key"
-                key  = "airflow-dev-fernet-key"
+                name = "airflow-app-dev-fernet-key"
+                key  = "airflow-app-dev-fernet-key"
               }
             }
           }
