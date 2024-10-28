@@ -279,7 +279,7 @@ jobs:
           TF_VAR_ingress_controller_namespace: ${{ env.INGRESS_CONTROLLER_NAMESPACE }}
           TF_VAR_airflow_repository: ${{ needs.infra.outputs.airflow_repository }}
           TF_VAR_airflow_repository_url: ${{ needs.infra.outputs.airflow_repository_url }}
-          TF_VAR_airflow_connection_string_secret: airflow-${{ vars.ENVIRONMENT_NAME }}-connection-string
+          TF_VAR_airflow_connection_string_secret: ${{ secrets.DB_CONNECTION_STRING_KEY }}
           TF_VAR_airflow_fernet_key_secret: airflow-${{ vars.ENVIRONMENT_NAME }}-fernet-key
         working-directory: ./src/terraform/k8s
         run: |
