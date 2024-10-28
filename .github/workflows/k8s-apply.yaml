@@ -211,23 +211,23 @@ jobs:
       #   run: |
       #     helm uninstall secrets-provider-aws --namespace kube-system
 
-      # - name: Install/Upgrade Secrets Store CSI Driver
-      #   run: |
-      #     helm upgrade --install csi-secrets-store secrets-store-csi-driver/secrets-store-csi-driver \
-      #       --namespace kube-system \
-      #       --create-namespace \
-      #       --set syncSecret.enabled=true \
-      #       --set installCRDs=true
+      - name: Install/Upgrade Secrets Store CSI Driver
+        run: |
+          helm upgrade --install csi-secrets-store secrets-store-csi-driver/secrets-store-csi-driver \
+            --namespace kube-system \
+            --create-namespace \
+            --set syncSecret.enabled=true \
+            --set installCRDs=true
 
-      # - name: Install/Upgrade AWS Secrets Provider
-      #   run: |
-      #     helm upgrade --install secrets-provider-aws aws-secrets-store/secrets-store-csi-driver-provider-aws \
-      #       --namespace kube-system
+      - name: Install/Upgrade AWS Secrets Provider
+        run: |
+          helm upgrade --install secrets-provider-aws aws-secrets-store/secrets-store-csi-driver-provider-aws \
+            --namespace kube-system
                 
-      # - name: Wait for CRDs to be Established
-      #   run: |
-      #     kubectl wait --for=condition=established crd secretproviderclasses.secrets-store.csi.x-k8s.io --timeout=120s
-      #     kubectl wait --for=condition=established crd secretproviderclasspodstatuses.secrets-store.csi.x-k8s.io --timeout=120s
+      - name: Wait for CRDs to be Established
+        run: |
+          kubectl wait --for=condition=established crd secretproviderclasses.secrets-store.csi.x-k8s.io --timeout=120s
+          kubectl wait --for=condition=established crd secretproviderclasspodstatuses.secrets-store.csi.x-k8s.io --timeout=120s
         
       # - name: Delete Existing Resources
       #   run: |
