@@ -197,13 +197,13 @@ jobs:
           helm repo add aws-secrets-store https://aws.github.io/secrets-store-csi-driver-provider-aws
           helm repo update
 
-      # - name: Uninstall Secrets Store CSI Driver
-      #   run: |
-      #     helm uninstall csi-secrets-store --namespace kube-system
+      - name: Uninstall Secrets Store CSI Driver
+        run: |
+          helm uninstall csi-secrets-store --namespace kube-system
 
-      # - name: Uninstall AWS Secrets Provider
-      #   run: |
-      #     helm uninstall secrets-provider-aws --namespace kube-system
+      - name: Uninstall AWS Secrets Provider
+        run: |
+          helm uninstall secrets-provider-aws --namespace kube-system
 
       - name: Install/Upgrade Secrets Store CSI Driver
         run: |
