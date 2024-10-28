@@ -32,16 +32,3 @@ variable "alb_controller_role" {
 variable "workload_identity_role" {
   type = string
 }
-variable "secret_key" {
-  type        = string
-  description = "Key for the secret value in the Kubernetes secret"
-}
-variable "airflow_connection_string_secret" {
-    type        = string
-    description = "The name of the secret containing the connection string for Airflow database"
-}
-variable "airflow_connection_string" {
-  description = "The connection string for Airflow database"
-  type        = string
-  sensitive   = true
-}

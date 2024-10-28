@@ -6,4 +6,3 @@ web_airflow_image = {
   name    = "ecr-airflow-dev-airflow"
   version = "2024.10.6"
 }
-airflow_connection_string = "postgresql://airflow:airflow@airflow-postgresql:5432/airflow"

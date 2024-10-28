@@ -55,12 +55,12 @@ resource "kubernetes_manifest" "secret_provider_class" {
       parameters = {
         objects = yamlencode([
           {
-            objectName = "airflow-${var.environment_name}-connection-string"
+            objectName = "airflow-dev}-connection-string"
             objectType = "secretsmanager"
             objectVersionLabel = "AWSCURRENT"
           },
           {
-            objectName = "airflow-${var.environment_name}-fernet-key"
+            objectName = "airflow-dev-fernet-key"
             objectType = "secretsmanager"
             objectVersionLabel = "AWSCURRENT"
           }
@@ -70,21 +70,21 @@ resource "kubernetes_manifest" "secret_provider_class" {
         {
           data = [
             {
-              key = "airflow-connection-string"
-              objectName = "airflow-${var.environment_name}-connection-string"
+              key = "airflow-dev-connection-string"
+              objectName = "airflow-dev-connection-string"
             }
           ]
-          secretName = "airflow-${var.environment_name}-connection-string"
+          secretName = "airflow-dev-connection-string"
           type = "Opaque"
         },
         {
           data = [
             {
-              key = "airflow-fernet-key"
-              objectName = "airflow-${var.environment_name}-fernet-key"
+              key = "airflow-dev-fernet-key"
+              objectName = "airflow-dev-fernet-key"
             }
           ]
-          secretName = "airflow-${var.environment_name}-fernet-key"
+          secretName = "airflow-dev-fernet-key"
           type = "Opaque"
         }
       ]
