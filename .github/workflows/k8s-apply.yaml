@@ -148,7 +148,7 @@ jobs:
           kubectl get secretproviderclass -n app
           
           echo "Checking Secret Provider Class Details..."
-          kubectl get secretproviderclass ${var.application_name}-${var.environment_name}-secret-provider-class -n app -o yaml
+          kubectl get secretproviderclass airflow-app-dev-secret-provider-class -n app -o yaml
           
           echo "Checking Secrets Store CSI Driver Logs..."
           kubectl logs -n kube-system -l app=secrets-store-csi-driver
