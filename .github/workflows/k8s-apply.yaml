@@ -140,14 +140,12 @@ jobs:
       - name: Debug Container Config Error
         run: |
           echo "Pod Description:"
-          kubectl describe pod -n app airflow-webserver-8cd7c57cc-f4b5f
-          
+          kubectl describe pod -n app -l app=airflow-webserver      
           echo "\nPod Events:"
           kubectl get events -n app --sort-by='.lastTimestamp' | grep airflow-webserver
           
           echo "\nContainer Logs (if any):"
-          kubectl logs -n app airflow-webserver-8cd7c57cc-f4b5f --previous
-          
+          kubectl logs -n app -l app=airflow-webserver --all-containers=true --previous      
           echo "\nDeployment Configuration:"
           kubectl get deployment -n app airflow-webserver -o yaml
 
