@@ -15,5 +15,6 @@ output "web_airflow_version" {
 }
 
 output "secret_provider_class_name" {
-  value = "${var.application_name}-${var.environment_name}-secret-provider-class"
+  value = "airflow-app-dev-secret-provider-class"
+  description = "Name of the Secret Provider Class for Airflow"
 }

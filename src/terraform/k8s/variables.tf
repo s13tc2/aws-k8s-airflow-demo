@@ -32,6 +32,9 @@ variable "alb_controller_role" {
 variable "workload_identity_role" {
   type = string
 }
+variable "secret_provider_class_name" {
+  type = string
+}
 # variable "airflow_dev_connection_string" {
 #   description = "The connection string for Airflow database"
 #   type        = string
