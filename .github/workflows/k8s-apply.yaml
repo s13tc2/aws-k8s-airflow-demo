@@ -72,10 +72,10 @@ jobs:
           admin_group=$(terraform output -raw admin_group_arn)
           echo "admin_group=$admin_group" >> "$GITHUB_OUTPUT"
 
-          frontend_repository=$(terraform output -raw frontend_repository)
+          frontend_repository=$(terraform output -raw airflow_repository)
           echo "airflow_repository=$airflow_repository" >> "$GITHUB_OUTPUT"
 
-          frontend_repository_url=$(terraform output -raw frontend_repository_url)
+          frontend_repository_url=$(terraform output -raw airflow_repository_url)
           echo "airflow_repository_url=$airflow_repository_url" >> "$GITHUB_OUTPUT"
 
   k8s:
