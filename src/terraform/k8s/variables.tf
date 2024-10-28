@@ -2,7 +2,8 @@ variable "application_name" {
   type = string
 }
 variable "environment_name" {
-  type = string
+  description = "Environment name (dev, prod, etc.)"
+  type        = string
 }
 variable "cluster_name" {
   type        = string
@@ -34,4 +35,14 @@ variable "workload_identity_role" {
 variable "secret_key" {
   type        = string
   description = "Key for the secret value in the Kubernetes secret"
+}
+variable "airflow_connection_string_secret" {
+  description = "Name of the Airflow connection string secret"
+  type        = string
+}
+
+variable "airflow_connection_string" {
+  description = "The connection string for Airflow database"
+  type        = string
+  sensitive   = true
 }

@@ -26,7 +26,8 @@ resource "helm_release" "aws_secrets_provider" {
 
 locals {
   secrets = {
-    "airflow-dev-connection-string" = "DB_CONNECTION_STRING"
+    "airflow-${var.environment_name}-connection-string" = "DB_CONNECTION_STRING"
+    "airflow-${var.environment_name}-fernet-key" = "FERNET_KEY"
   }
 }
 
@@ -44,9 +45,9 @@ resource "null_resource" "wait_for_crds" {
 resource "kubernetes_manifest" "secret_provider_class" {
   manifest = {
     apiVersion = "secrets-store.csi.x-k8s.io/v1"
-    kind       = "SecretProviderClass"
+    kind = "SecretProviderClass"
     metadata = {
-      name      = "${var.application_name}-${var.environment_name}-secret-provider-class"
+      name = "${var.application_name}-${var.environment_name}-secret-provider-class"
       namespace = var.k8s_namespace
     }
     spec = {
@@ -54,8 +55,13 @@ resource "kubernetes_manifest" "secret_provider_class" {
       parameters = {
         objects = yamlencode([
           {
-            objectName         = "airflow-dev-connection-string"
-            objectType         = "secretsmanager"
+            objectName = "airflow-${var.environment_name}-connection-string"
+            objectType = "secretsmanager"
+            objectVersionLabel = "AWSCURRENT"
+          },
+          {
+            objectName = "airflow-${var.environment_name}-fernet-key"
+            objectType = "secretsmanager"
             objectVersionLabel = "AWSCURRENT"
           }
         ])
@@ -64,17 +70,26 @@ resource "kubernetes_manifest" "secret_provider_class" {
         {
           data = [
             {
-              key        = "airflow-dev-connection-string"
-              objectName = "airflow-dev-connection-string"
+              key = "airflow-connection-string"
+              objectName = "airflow-${var.environment_name}-connection-string"
             }
           ]
-          secretName = "airflow-dev-connection-string"
-          type       = "Opaque"
+          secretName = "airflow-${var.environment_name}-connection-string"
+          type = "Opaque"
+        },
+        {
+          data = [
+            {
+              key = "airflow-fernet-key"
+              objectName = "airflow-${var.environment_name}-fernet-key"
+            }
+          ]
+          secretName = "airflow-${var.environment_name}-fernet-key"
+          type = "Opaque"
         }
       ]
     }
   }
-
   depends_on = [
     null_resource.wait_for_crds
   ]

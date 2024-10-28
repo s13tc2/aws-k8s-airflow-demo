@@ -136,6 +136,11 @@ jobs:
         run: |
           echo "Checking pod status..."
           kubectl get pods -n airflow -o wide
+
+      - name: Check Pod Status
+        run: |
+          echo "Checking pod status..."
+          kubectl get pods -n airflow -o wide
           
       - name: Get Pod Details
         run: |
