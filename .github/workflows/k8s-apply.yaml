@@ -122,17 +122,35 @@ jobs:
         run: |
           kubectl get pods --all-namespaces -o wide
 
-       # Add these new debug steps here:
-      - name: Debug Pod Status
+      - name: Debug Service Account and Role Configuration
         run: |
-          echo "Checking pod status..."
-          kubectl get pods -n app -l app=airflow-webserver
+          echo "1. Checking service account configuration..."
+          kubectl get serviceaccount airflow-portal -n app -o yaml
           
-          echo "Checking pod details..."
-          kubectl describe pod -n app -l app=airflow-webserver
+          echo "2. Checking pod configuration..."
+          kubectl get pod -n app -l app=airflow-webserver -o yaml
           
-          echo "Checking pod logs..."
-          kubectl logs -n app -l app=airflow-webserver
+          echo "3. Checking workload identity role..."
+          echo "Role ARN: ${{ needs.infra.outputs.workload_identity_role }}"
+          
+          echo "4. Checking IAM role trust relationship..."
+          ROLE_NAME=$(echo ${{ needs.infra.outputs.workload_identity_role }} | cut -d'/' -f2)
+          aws iam get-role --role-name $ROLE_NAME --query 'Role.AssumeRolePolicyDocument' --output json
+          
+          echo "5. Checking Secret Provider Class..."
+          kubectl get secretproviderclass airflow-app-dev-secret-provider-class -n app -o yaml
+
+      #  # Add these new debug steps here:
+      # - name: Debug Pod Status
+      #   run: |
+      #     echo "Checking pod status..."
+      #     kubectl get pods -n app -l app=airflow-webserver
+          
+      #     echo "Checking pod details..."
+      #     kubectl describe pod -n app -l app=airflow-webserver
+          
+      #     echo "Checking pod logs..."
+      #     kubectl logs -n app -l app=airflow-webserver
 
       - name: Install kubectl
         run: |
