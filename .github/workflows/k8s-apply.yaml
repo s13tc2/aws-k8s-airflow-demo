@@ -122,6 +122,18 @@ jobs:
         run: |
           kubectl get pods --all-namespaces -o wide
 
+      - name: Get Outputs
+        run: |
+          # Add these debug outputs
+          echo "Checking k8s namespace variable..."
+          echo "k8s_namespace = $(terraform output -raw k8s_namespace)"
+          
+          echo "Checking service account name variable..."
+          echo "k8s_service_account_name = $(terraform output -raw k8s_service_account_name)"
+          
+          echo "Checking OIDC provider URL..."
+          echo "oidc_provider = $(terraform output -raw oidc_provider_url)"
+
       - name: Debug Service Account and Role Configuration
         run: |
           echo "1. Checking service account configuration..."
