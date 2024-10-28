@@ -114,43 +114,43 @@ jobs:
           echo "Airflow Repository: ${{ needs.infra.outputs.airflow_repository }}"
           echo "Airflow Repository URL: ${{ needs.infra.outputs.airflow_repository_url }}"
 
-      - name: Get Pods Status
-        run: |
-          kubectl get pods -n app -o wide
+      # - name: Get Pods Status
+      #   run: |
+      #     kubectl get pods -n app -o wide
       
-      - name: List All Pods
-        run: |
-          kubectl get pods --all-namespaces -o wide
+      # - name: List All Pods
+      #   run: |
+      #     kubectl get pods --all-namespaces -o wide
 
-      - name: Get Outputs
-        run: |
-          # Add these debug outputs
-          echo "Checking k8s namespace variable..."
-          echo "k8s_namespace = $(terraform output -raw k8s_namespace)"
+      # - name: Get Outputs
+      #   run: |
+      #     # Add these debug outputs
+      #     echo "Checking k8s namespace variable..."
+      #     echo "k8s_namespace = $(terraform output -raw k8s_namespace)"
           
-          echo "Checking service account name variable..."
-          echo "k8s_service_account_name = $(terraform output -raw k8s_service_account_name)"
+      #     echo "Checking service account name variable..."
+      #     echo "k8s_service_account_name = $(terraform output -raw k8s_service_account_name)"
           
-          echo "Checking OIDC provider URL..."
-          echo "oidc_provider = $(terraform output -raw oidc_provider_url)"
+      #     echo "Checking OIDC provider URL..."
+      #     echo "oidc_provider = $(terraform output -raw oidc_provider_url)"
 
-      - name: Debug Service Account and Role Configuration
-        run: |
-          echo "1. Checking service account configuration..."
-          kubectl get serviceaccount airflow-portal -n app -o yaml
+      # - name: Debug Service Account and Role Configuration
+      #   run: |
+      #     echo "1. Checking service account configuration..."
+      #     kubectl get serviceaccount airflow-portal -n app -o yaml
           
-          echo "2. Checking pod configuration..."
-          kubectl get pod -n app -l app=airflow-webserver -o yaml
+      #     echo "2. Checking pod configuration..."
+      #     kubectl get pod -n app -l app=airflow-webserver -o yaml
           
-          echo "3. Checking workload identity role..."
-          echo "Role ARN: ${{ needs.infra.outputs.workload_identity_role }}"
+      #     echo "3. Checking workload identity role..."
+      #     echo "Role ARN: ${{ needs.infra.outputs.workload_identity_role }}"
           
-          echo "4. Checking IAM role trust relationship..."
-          ROLE_NAME=$(echo ${{ needs.infra.outputs.workload_identity_role }} | cut -d'/' -f2)
-          aws iam get-role --role-name $ROLE_NAME --query 'Role.AssumeRolePolicyDocument' --output json
+      #     echo "4. Checking IAM role trust relationship..."
+      #     ROLE_NAME=$(echo ${{ needs.infra.outputs.workload_identity_role }} | cut -d'/' -f2)
+      #     aws iam get-role --role-name $ROLE_NAME --query 'Role.AssumeRolePolicyDocument' --output json
           
-          echo "5. Checking Secret Provider Class..."
-          kubectl get secretproviderclass airflow-app-dev-secret-provider-class -n app -o yaml
+      #     echo "5. Checking Secret Provider Class..."
+      #     kubectl get secretproviderclass airflow-app-dev-secret-provider-class -n app -o yaml
 
       #  # Add these new debug steps here:
       # - name: Debug Pod Status
@@ -202,14 +202,14 @@ jobs:
           kubectl wait --for=condition=established crd secretproviderclasses.secrets-store.csi.x-k8s.io --timeout=120s
           kubectl wait --for=condition=established crd secretproviderclasspodstatuses.secrets-store.csi.x-k8s.io --timeout=120s
         
-      - name: Delete Existing Resources
-        run: |
-          kubectl delete deployment airflow-webserver -n app --ignore-not-found=true
-          kubectl delete ingress airflow-webserver-ingress -n app --ignore-not-found=true
-          kubectl delete service airflow-webserver-service -n app --ignore-not-found=true
+      # - name: Delete Existing Resources
+      #   run: |
+      #     kubectl delete deployment airflow-webserver -n app --ignore-not-found=true
+      #     kubectl delete ingress airflow-webserver-ingress -n app --ignore-not-found=true
+      #     kubectl delete service airflow-webserver-service -n app --ignore-not-found=true
           
-          # Wait a few seconds to ensure resources are fully deleted
-          sleep 10
+      #     # Wait a few seconds to ensure resources are fully deleted
+      #     sleep 10
 
       - id: Apply
         name: Terraform Apply
@@ -256,10 +256,6 @@ jobs:
         run: |
           kubectl get services -n ${{ steps.Apply.outputs.k8s_namespace }}
       
-      - name: Validate airflow Service Endpoints
-        run: |
-          kubectl get endpoints airflow-service -n ${{ steps.Apply.outputs.k8s_namespace }} || exit 1
-
       - name: Validate airflow Service Endpoints
         run: |
           kubectl get endpoints airflow-service -n ${{ steps.Apply.outputs.k8s_namespace }} || exit 1
