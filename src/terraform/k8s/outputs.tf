@@ -13,8 +13,3 @@ output "web_airflow_name" {
 output "web_airflow_version" {
   value = var.web_airflow_image.version
 }
-
-output "secret_provider_class_name" {
-  value = "airflow-app-dev-secret-provider-class"
-  description = "Name of the Secret Provider Class for Airflow"
-}

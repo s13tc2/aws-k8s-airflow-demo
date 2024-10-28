@@ -38,8 +38,8 @@ resource "null_resource" "wait_for_crds" {
 # Modify your locals block
 locals {
   secrets = {
-    "airflow-portal-dev-connection-string" = var.airflow_connection_string
-    "airflow-portal-dev-fernet-key" = var.airflow_fernet_key
+    "airflow-portal-dev-connection-string" = "AIRFLOW_CONNECTION_STRING"
+    "airflow-portal-dev-fernet-key" = "FERNET_KEY"
   }
 }
 

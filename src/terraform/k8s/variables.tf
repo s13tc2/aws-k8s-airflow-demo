@@ -32,14 +32,3 @@ variable "alb_controller_role" {
 variable "workload_identity_role" {
   type = string
 }
-variable "secret_provider_class_name" {
-  type = string
-}
-variable "airflow_connection_string" {
-  type        = string
-  description = "Airflow database connection string"
-}
-variable "airflow_fernet_key" {
-  type        = string
-  description = "Airflow Fernet key"
-}
