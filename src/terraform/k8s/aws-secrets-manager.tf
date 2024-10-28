@@ -43,7 +43,6 @@ locals {
   }
 }
 
-# Then modify your kubernetes_manifest resource
 resource "kubernetes_manifest" "secret_provider_class" {
   manifest = {
     apiVersion = "secrets-store.csi.x-k8s.io/v1"
@@ -57,18 +56,18 @@ resource "kubernetes_manifest" "secret_provider_class" {
       parameters = {
         objects = yamlencode([
           {
-            objectName = "airflow-portal-dev-connection-string"  # Changed from airflow-app-dev
-            objectType = "kubernetes.io/secret"
+            objectName = "airflow-portal-dev-connection-string"
+            objectType = "secretsmanager"  # Changed from kubernetes.io/secret
             objectData = [
-                {
-                    key = "connection"
-                    value = local.secrets["airflow-portal-dev-connection-string"]  # Changed from airflow-app-dev
-                }
+              {
+                key = "connection"
+                value = local.secrets["airflow-portal-dev-connection-string"]
+              }
             ]
           },
           {
             objectName = "airflow-app-dev-fernet-key"
-            objectType = "kubernetes.io/secret"
+            objectType = "secretsmanager"  # Changed from kubernetes.io/secret
             objectData = [
               {
                 key = "fernet_key"
@@ -81,13 +80,13 @@ resource "kubernetes_manifest" "secret_provider_class" {
       secretObjects = [
         {
           data = [
-                {
-                    key = "connection"
-                    objectName = "airflow-portal-dev-connection-string"  # Changed from airflow-app-dev
-                }
-            ]
-            secretName = "airflow-portal-dev-connection-string"  # Changed from airflow-app-dev
-            type = "Opaque"
+            {
+              key = "connection"
+              objectName = "airflow-portal-dev-connection-string"
+            }
+          ]
+          secretName = "airflow-portal-dev-connection-string"
+          type = "Opaque"
         },
         {
           data = [
