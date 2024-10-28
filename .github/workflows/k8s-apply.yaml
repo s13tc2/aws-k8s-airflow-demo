@@ -129,7 +129,7 @@ jobs:
         run: |
           echo "Checking for required secrets..."
           kubectl get secrets -n airflow
-          kubectl get secrets airflow-connection-string -n airflow
+          kubectl get secrets airflow-dev-connection-string -n airflow
           kubectl get secrets airflow-fernet-key -n airflow
 
       - name: Check Pod Status
