@@ -229,14 +229,14 @@ jobs:
           kubectl wait --for=condition=established crd secretproviderclasses.secrets-store.csi.x-k8s.io --timeout=120s
           kubectl wait --for=condition=established crd secretproviderclasspodstatuses.secrets-store.csi.x-k8s.io --timeout=120s
         
-      - name: Delete Existing Resources
-        run: |
-          kubectl delete deployment airflow-webserver -n app --ignore-not-found=true
-          kubectl delete ingress airflow-webserver-ingress -n app --ignore-not-found=true
-          kubectl delete service airflow-webserver-service -n app --ignore-not-found=true
+      # - name: Delete Existing Resources
+      #   run: |
+      #     kubectl delete deployment airflow-webserver -n app --ignore-not-found=true
+      #     kubectl delete ingress airflow-webserver-ingress -n app --ignore-not-found=true
+      #     kubectl delete service airflow-webserver-service -n app --ignore-not-found=true
           
-          # Wait a few seconds to ensure resources are fully deleted
-          sleep 10
+      #     # Wait a few seconds to ensure resources are fully deleted
+      #     sleep 10
 
       - id: Apply
         name: Terraform Apply
