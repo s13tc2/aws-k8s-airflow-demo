@@ -119,32 +119,32 @@ jobs:
         run: |
           kubectl get pods -n airflow -o wide
 
-      - name: Check Required Secrets
-        run: |
-          echo "Checking for required secrets..."
-          kubectl get secrets -n airflow
-          kubectl get secrets airflow-dev-connection-string -n airflow
-          kubectl get secrets airflow-fernet-key -n airflow
+      # - name: Check Required Secrets
+      #   run: |
+      #     echo "Checking for required secrets..."
+      #     kubectl get secrets -n airflow
+      #     kubectl get secrets airflow-dev-connection-string -n airflow
+      #     kubectl get secrets airflow-dev-fernet-key -n airflow
 
-      - name: Check Pod Status
-        run: |
-          echo "Checking pod status..."
-          kubectl get pods -n airflow -o wide
+      # - name: Check Pod Status
+      #   run: |
+      #     echo "Checking pod status..."
+      #     kubectl get pods -n airflow -o wide
 
       # - name: Check Pod Status
       #   run: |
       #     echo "Checking pod status..."
       #     kubectl get pods -n airflow -o wide
           
-      - name: Get Pod Details
-        run: |
-          echo "Checking pod details..."
-          kubectl describe pod -n airflow -l app=airflow-webserver
+      # - name: Get Pod Details
+      #   run: |
+      #     echo "Checking pod details..."
+      #     kubectl describe pod -n airflow -l app=airflow-webserver
 
-      - name: Get Pod Logs
-        run: |
-          echo "Checking logs..."
-          kubectl logs -n airflow -l app=airflow-webserver --tail=100
+      # - name: Get Pod Logs
+      #   run: |
+      #     echo "Checking logs..."
+      #     kubectl logs -n airflow -l app=airflow-webserver --tail=100
 
       #   # Detailed version with multiple checks
       # - name: Debug Airflow Deployment

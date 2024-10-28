@@ -26,8 +26,8 @@ resource "helm_release" "aws_secrets_provider" {
 
 locals {
   secrets = {
-    "airflow-${var.environment_name}-connection-string" = "DB_CONNECTION_STRING"
-    "airflow-${var.environment_name}-fernet-key" = "FERNET_KEY"
+    "airflow-dev-connection-string" = "DB_CONNECTION_STRING"
+    "airflow-dev-fernet-key" = "FERNET_KEY"
   }
 }
 

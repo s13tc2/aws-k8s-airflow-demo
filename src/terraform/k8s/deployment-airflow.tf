@@ -63,7 +63,7 @@ resource "kubernetes_deployment" "airflow" {
             value_from {
               secret_key_ref {
                 name = "airflow-dev-connection-string"
-                key  = "airflow-connection-string"
+                key  = "airflow-dev-connection-string"
               }
             }
           }
@@ -73,7 +73,7 @@ resource "kubernetes_deployment" "airflow" {
             value_from {
               secret_key_ref {
                 name = "airflow-dev-fernet-key"
-                key  = "airflow-fernet-key"
+                key  = "airflow-dev-fernet-key"
               }
             }
           }
