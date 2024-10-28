@@ -110,10 +110,10 @@ jobs:
           aws eks update-kubeconfig --name ${{ needs.infra.outputs.kubernetes_cluster_name }} --region ${{ needs.infra.outputs.primary_region }}
 
       # Display frontend and backend repositories
-      - name: Display Frontend and Backend Repositories
+      - name: Display Airflow Repositories
         run: |
-          echo "Frontend Repository: ${{ needs.infra.outputs.airflow_repository }}"
-          echo "Frontend Repository URL: ${{ needs.infra.outputs.airflow_repository_url }}"
+          echo "Airflow Repository: ${{ needs.infra.outputs.airflow_repository }}"
+          echo "Airflow Repository URL: ${{ needs.infra.outputs.airflow_repository_url }}"
 
       # - name: Set ECR Image for fleet-api and fleet-portal
       #   run: |
@@ -123,16 +123,16 @@ jobs:
       # Debugging Steps to inspect pod status
       - name: Get Pods Status
         run: |
-          kubectl get pods -n app -o wide
+          kubectl get pods -n airflow -o wide
 
       # Validate fleet-api and fleet-portal Pods
       - name: Ensure airflow Pods are Running
         run: |
-          kubectl get pods -l app=airflow -n app --field-selector=status.phase=Running || exit 1
+          kubectl get pods -l app=airflow -n airflow --field-selector=status.phase=Running || exit 1
 
       - name: Ensure fleet-portal Pods are Running
         run: |
-          kubectl get pods -l app=airflow -n app --field-selector=status.phase=Running || exit 1
+          kubectl get pods -l app=airflow -n airflow --field-selector=status.phase=Running || exit 1
 
 
       - name: Install kubectl
@@ -153,7 +153,6 @@ jobs:
         run: |
           helm repo add secrets-store-csi-driver https://kubernetes-sigs.github.io/secrets-store-csi-driver/charts
           helm repo add aws-secrets-store https://aws.github.io/secrets-store-csi-driver-provider-aws
-          helm repo add apache-airflow https://airflow.apache.org
           helm repo update
 
       - name: Install/Upgrade Secrets Store CSI Driver
@@ -169,14 +168,14 @@ jobs:
           helm upgrade --install secrets-provider-aws aws-secrets-store/secrets-store-csi-driver-provider-aws \
             --namespace kube-system
 
-      - name: Install/Upgrade Airflow
-        run: |
-          helm upgrade --install airflow apache-airflow/airflow \
-            --namespace airflow \
-            --create-namespace \
-            --set webserver.defaultUser.enabled=true \
-            --set webserver.defaultUser.username=admin \
-            --set webserver.defaultUser.password=admin
+      # - name: Install/Upgrade Airflow
+      #   run: |
+      #     helm upgrade --install airflow apache-airflow/airflow \
+      #       --namespace airflow \
+      #       --create-namespace \
+      #       --set webserver.defaultUser.enabled=true \
+      #       --set webserver.defaultUser.username=admin \
+      #       --set webserver.defaultUser.password=admin
                 
       - name: Wait for CRDs to be Established
         run: |
