@@ -54,7 +54,7 @@ resource "kubernetes_deployment" "airflow" {
         }
 
         container {
-          image = "${data.aws_caller_identity.current.account_id}.dkr.ecr.${var.primary_region}.amazonaws.com/${var.airflow_image.name}:${var.airflow_image.version}"
+          image = "${data.aws_caller_identity.current.account_id}.dkr.ecr.${var.primary_region}.amazonaws.com/${var.web_airflow_image.name}:${var.web_airflow_image.version}"
           name  = local.airflow_name
 
           resources {
@@ -142,12 +142,12 @@ resource "kubernetes_deployment" "airflow" {
 
           env {
             name  = "AIRFLOW__KUBERNETES__WORKER_CONTAINER_REPOSITORY"
-            value = "${data.aws_caller_identity.current.account_id}.dkr.ecr.${var.primary_region}.amazonaws.com/${var.airflow_image.name}"
+            value = "${data.aws_caller_identity.current.account_id}.dkr.ecr.${var.primary_region}.amazonaws.com/${var.web_airflow_image.name}"
           }
 
           env {
             name  = "AIRFLOW__KUBERNETES__WORKER_CONTAINER_TAG"
-            value = var.airflow_image.version
+            value = var.web_airflow_image.version
           }
 
           env {
