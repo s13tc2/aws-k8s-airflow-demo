@@ -223,10 +223,10 @@ jobs:
       #       --namespace airflow
       #     kubectl delete namespace airflow
                 
-      - name: Wait for CRDs to be Established
-        run: |
-          kubectl wait --for=condition=established crd secretproviderclasses.secrets-store.csi.x-k8s.io --timeout=120s
-          kubectl wait --for=condition=established crd secretproviderclasspodstatuses.secrets-store.csi.x-k8s.io --timeout=120s
+      # - name: Wait for CRDs to be Established
+      #   run: |
+      #     kubectl wait --for=condition=established crd secretproviderclasses.secrets-store.csi.x-k8s.io --timeout=120s
+      #     kubectl wait --for=condition=established crd secretproviderclasspodstatuses.secrets-store.csi.x-k8s.io --timeout=120s
 
       - id: Apply
         name: Terraform Apply
