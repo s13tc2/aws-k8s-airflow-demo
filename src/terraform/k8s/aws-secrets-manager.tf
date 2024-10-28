@@ -39,7 +39,7 @@ resource "null_resource" "wait_for_crds" {
 locals {
   secrets = {
     "airflow-portal-dev-connection-string" = var.airflow_connection_string
-    "airflow-app-dev-fernet-key" = var.airflow_fernet_key
+    "airflow-portal-dev-fernet-key" = var.airflow_fernet_key
   }
 }
 
@@ -66,12 +66,12 @@ resource "kubernetes_manifest" "secret_provider_class" {
             ]
           },
           {
-            objectName = "airflow-app-dev-fernet-key"
+            objectName = "airflow-portal-dev-fernet-key"
             objectType = "secretsmanager"  # Changed from kubernetes.io/secret
             objectData = [
               {
                 key = "fernet_key"
-                value = local.secrets["airflow-app-dev-fernet-key"]
+                value = local.secrets["airflow-portal-dev-fernet-key"]
               }
             ]
           }
@@ -92,10 +92,10 @@ resource "kubernetes_manifest" "secret_provider_class" {
           data = [
             {
               key = "fernet_key"
-              objectName = "airflow-app-dev-fernet-key"
+              objectName = "airflow-portal-dev-fernet-key"
             }
           ]
-          secretName = "airflow-app-dev-fernet-key"
+          secretName = "airflow-portal-dev-fernet-key"
           type = "Opaque"
         }
       ]

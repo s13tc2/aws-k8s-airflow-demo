@@ -255,7 +255,7 @@ jobs:
           TF_VAR_airflow_repository: ${{ needs.infra.outputs.airflow_repository }}
           TF_VAR_airflow_repository_url: ${{ needs.infra.outputs.airflow_repository_url }}
           TF_VAR_airflow_connection_string: "postgresql+psycopg2://airflow:airflow@localhost:5432/airflow"  # Add this
-          TF_VAR_airflow_fernet_key: "Q7c8Hy_FAiUKTwIxN7yWgr8ZL0uogBTitrMtLLpCFsY="  # Add this
+          TF_VAR_airflow_portal_dev_fernet_key: "Q7c8Hy_FAiUKTwIxN7yWgr8ZL0uogBTitrMtLLpCFsY="  # Add this
         working-directory: ./src/terraform/k8s
         run: |
           terraform init \
