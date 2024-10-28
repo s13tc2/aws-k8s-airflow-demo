@@ -108,6 +108,11 @@ jobs:
       - name: Update kubeconfig for EKS Cluster
         run: |
           aws eks update-kubeconfig --name ${{ needs.infra.outputs.kubernetes_cluster_name }} --region ${{ needs.infra.outputs.primary_region }}
+
+      - name: Check AWS Secrets
+        run: |
+          echo "Checking AWS Secrets Manager..."
+          aws secretsmanager list-secrets | grep airflow-portal-dev
       
       - name: Get Pods Status
         run: |
@@ -242,7 +247,6 @@ jobs:
           TF_VAR_airflow_repository: ${{ needs.infra.outputs.airflow_repository }}
           TF_VAR_airflow_repository_url: ${{ needs.infra.outputs.airflow_repository_url }}
           TF_VAR_airflow_connection_string: "postgresql+psycopg2://airflow:airflow@localhost:5432/airflow"  # Add this
-          TF_VAR_airflow_portal_dev_fernet_key: "Q7c8Hy_FAiUKTwIxN7yWgr8ZL0uogBTitrMtLLpCFsY="  # Add this
         working-directory: ./src/terraform/k8s
         run: |
           terraform init \

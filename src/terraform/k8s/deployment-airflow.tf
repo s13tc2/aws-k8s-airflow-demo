@@ -39,7 +39,8 @@ resource "kubernetes_deployment" "airflow" {
         }
 
         container {
-          image = "${data.aws_caller_identity.current.account_id}.dkr.ecr.${var.primary_region}.amazonaws.com/${var.web_airflow_image.name}:${var.web_airflow_image.version}"
+        #   image = "${data.aws_caller_identity.current.account_id}.dkr.ecr.${var.primary_region}.amazonaws.com/${var.web_airflow_image.name}:${var.web_airflow_image.version}"
+          image = "292991734662.dkr.ecr.us-west-2.amazonaws.com/ecr-airflow-portal-dev-airflow:2024.10.13"
           name  = local.airflow_name
 
           port {
