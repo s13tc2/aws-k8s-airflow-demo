@@ -72,8 +72,8 @@ resource "kubernetes_deployment" "airflow" {
             name = "AIRFLOW__CORE__FERNET_KEY"
             value_from {
               secret_key_ref {
-                name = "airflow-dev-fernet-key"
-                key  = "airflow-dev-fernet-key"
+                name = "airflow-fernet-key"
+                key  = "airflow-fernet-key"
               }
             }
           }
