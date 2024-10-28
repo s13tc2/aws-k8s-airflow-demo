@@ -122,6 +122,18 @@ jobs:
         run: |
           kubectl get pods --all-namespaces -o wide
 
+       # Add these new debug steps here:
+      - name: Debug Pod Status
+        run: |
+          echo "Checking pod status..."
+          kubectl get pods -n app -l app=airflow-webserver
+          
+          echo "Checking pod details..."
+          kubectl describe pod -n app -l app=airflow-webserver
+          
+          echo "Checking pod logs..."
+          kubectl logs -n app -l app=airflow-webserver
+
       - name: Install kubectl
         run: |
           curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
@@ -168,7 +180,7 @@ jobs:
           
           # Wait a few seconds to ensure resources are fully deleted
           sleep 10
-          
+
       - id: Apply
         name: Terraform Apply
         env:
