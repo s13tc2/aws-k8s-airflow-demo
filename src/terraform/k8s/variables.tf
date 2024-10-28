@@ -39,7 +39,6 @@ variable "airflow_connection_string" {
   type        = string
   description = "Airflow database connection string"
 }
-
 variable "airflow_fernet_key" {
   type        = string
   description = "Airflow Fernet key"

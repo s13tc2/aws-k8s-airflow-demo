@@ -38,7 +38,7 @@ resource "null_resource" "wait_for_crds" {
 # Modify your locals block
 locals {
   secrets = {
-    "airflow-app-dev-connection-string" = var.airflow_connection_string
+    "airflow-portal-dev-connection-string" = var.airflow_connection_string
     "airflow-app-dev-fernet-key" = var.airflow_fernet_key
   }
 }
@@ -57,13 +57,13 @@ resource "kubernetes_manifest" "secret_provider_class" {
       parameters = {
         objects = yamlencode([
           {
-            objectName = "airflow-app-dev-connection-string"
+            objectName = "airflow-portal-dev-connection-string"  # Changed from airflow-app-dev
             objectType = "kubernetes.io/secret"
             objectData = [
-              {
-                key = "connection"
-                value = local.secrets["airflow-app-dev-connection-string"]
-              }
+                {
+                    key = "connection"
+                    value = local.secrets["airflow-portal-dev-connection-string"]  # Changed from airflow-app-dev
+                }
             ]
           },
           {
@@ -81,13 +81,13 @@ resource "kubernetes_manifest" "secret_provider_class" {
       secretObjects = [
         {
           data = [
-            {
-              key = "connection"
-              objectName = "airflow-app-dev-connection-string"
-            }
-          ]
-          secretName = "airflow-app-dev-connection-string"
-          type = "Opaque"
+                {
+                    key = "connection"
+                    objectName = "airflow-portal-dev-connection-string"  # Changed from airflow-app-dev
+                }
+            ]
+            secretName = "airflow-portal-dev-connection-string"  # Changed from airflow-app-dev
+            type = "Opaque"
         },
         {
           data = [
