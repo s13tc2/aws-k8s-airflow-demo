@@ -81,7 +81,7 @@ resource "kubernetes_manifest" "secret_provider_class" {
         {
           data = [
             {
-              key = "connection"
+              key = "airflow-portal-dev-connection-string"
               objectName = "airflow-portal-dev-connection-string"
             }
           ]
@@ -91,7 +91,7 @@ resource "kubernetes_manifest" "secret_provider_class" {
         {
           data = [
             {
-              key = "fernet_key"
+              key = "airflow-portal-dev-fernet-key"
               objectName = "airflow-portal-dev-fernet-key"
             }
           ]
