@@ -36,10 +36,6 @@ variable "secret_key" {
   type        = string
   description = "Key for the secret value in the Kubernetes secret"
 }
-variable "airflow_connection_string_secret" {
-  description = "Name of the Airflow connection string secret"
-  type        = string
-}
 
 variable "airflow_connection_string" {
   description = "The connection string for Airflow database"
