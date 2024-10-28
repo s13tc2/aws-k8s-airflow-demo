@@ -112,6 +112,15 @@ jobs:
       - name: Get Pods Status
         run: |
           kubectl get pods -n app -o wide
+
+      - name: Delete Existing Resources
+        run: |
+          kubectl delete deployment airflow-webserver -n app --ignore-not-found=true
+          kubectl delete ingress airflow-webserver-ingress -n app --ignore-not-found=true
+          kubectl delete service airflow-webserver-service -n app --ignore-not-found=true
+          
+          # Wait a few seconds to ensure resources are fully deleted
+          sleep 10
       
       - name: List All Pods
         run: |
