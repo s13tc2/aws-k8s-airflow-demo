@@ -6,6 +6,7 @@ resource "aws_security_group" "airflow_vpc_endpoints" {
 
   ingress {
     from_port       = 443
+    
     to_port         = 443
     protocol        = "tcp"
     cidr_blocks     = values(local.private_subnets)[*].cidr_block
