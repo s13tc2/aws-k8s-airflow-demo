@@ -3,41 +3,12 @@ data "helm_template" "airflow" {
   name       = "airflow"
   repository = "https://airflow.apache.org"
   chart      = "airflow"
-  version    = "1.0.0"
+  version    = "1.15.0"
 
   values = [
     yamlencode({
       executor = "KubernetesExecutor"
-      
-      # Add Kubernetes Executor configs
-      kubernetes = {
-        worker = {
-          resources = {
-            requests = {
-              cpu    = "500m"
-              memory = "1Gi"
-            }
-            limits = {
-              cpu    = "1000m"
-              memory = "2Gi"
-            }
-          }
-        }
-      }
-
-      # Web server configurations
-      webserver = {
-        resources = {
-          requests = {
-            cpu    = "500m"
-            memory = "1Gi"
-          }
-          limits = {
-            cpu    = "1000m"
-            memory = "2Gi"
-          }
-        }
-      }
+    
     })
   ]
 }
