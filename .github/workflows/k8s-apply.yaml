@@ -111,22 +111,22 @@ jobs:
         run: |
           aws eks update-kubeconfig --name ${{ needs.infra.outputs.kubernetes_cluster_name }} --region ${{ needs.infra.outputs.primary_region }}
 
-      - name: Verify Setup
-        run: |
-          echo "Checking pod status..."
-          kubectl get pods -n app -l app=airflow-webserver
+      # - name: Verify Setup
+      #   run: |
+      #     echo "Checking pod status..."
+      #     kubectl get pods -n app -l app=airflow-webserver
           
-          echo "\nChecking SecretProviderClass..."
-          kubectl get secretproviderclass -n app -o yaml
+      #     echo "\nChecking SecretProviderClass..."
+      #     kubectl get secretproviderclass -n app -o yaml
           
-          echo "\nChecking Kubernetes secrets..."
-          kubectl get secrets -n app
+      #     echo "\nChecking Kubernetes secrets..."
+      #     kubectl get secrets -n app
           
-          echo "\nChecking pod description..."
-          kubectl describe pod -n app -l app=airflow-webserver
+      #     echo "\nChecking pod description..."
+      #     kubectl describe pod -n app -l app=airflow-webserver
           
-          echo "\nChecking CSI driver logs..."
-          kubectl logs -n kube-system -l app=secrets-store-csi-driver --tail=50
+      #     echo "\nChecking CSI driver logs..."
+      #     kubectl logs -n kube-system -l app=secrets-store-csi-driver --tail=50
 
       # - name: Delete Existing Resources
       #   run: |
@@ -179,14 +179,14 @@ jobs:
           kubectl wait --for=condition=established crd secretproviderclasses.secrets-store.csi.x-k8s.io --timeout=120s
           kubectl wait --for=condition=established crd secretproviderclasspodstatuses.secrets-store.csi.x-k8s.io --timeout=120s
         
-      - name: Delete Existing Resources
-        run: |
-          kubectl delete deployment airflow-webserver -n app --ignore-not-found=true
-          kubectl delete ingress airflow-webserver-ingress -n app --ignore-not-found=true
-          kubectl delete service airflow-webserver-service -n app --ignore-not-found=true
+      # - name: Delete Existing Resources
+      #   run: |
+      #     kubectl delete deployment airflow-webserver -n app --ignore-not-found=true
+      #     kubectl delete ingress airflow-webserver-ingress -n app --ignore-not-found=true
+      #     kubectl delete service airflow-webserver-service -n app --ignore-not-found=true
           
-          # Wait a few seconds to ensure resources are fully deleted
-          sleep 10
+      #     # Wait a few seconds to ensure resources are fully deleted
+      #     sleep 10
 
       - id: Apply
         name: Terraform Apply
