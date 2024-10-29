@@ -35,12 +35,12 @@ resource "null_resource" "wait_for_crds" {
   ]
 }
 
-locals {
-  secrets = {
-    "airflow-portal-dev-connection-string" = "airflow-portal-dev-connection-string"
-    "airflow-portal-dev-fernet-key" = "airflow-portal-dev-fernet-key"
-  }
-}
+# locals {
+#   secrets = {
+#     "airflow-portal-dev-connection-string" = "airflow-portal-dev-connection-string"
+#     "airflow-portal-dev-fernet-key" = "airflow-portal-dev-fernet-key"
+#   }
+# }
 
 resource "kubernetes_manifest" "secret_provider_class" {
   manifest = {
