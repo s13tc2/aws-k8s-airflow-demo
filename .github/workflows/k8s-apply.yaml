@@ -109,6 +109,43 @@ jobs:
         run: |
           aws eks update-kubeconfig --name ${{ needs.infra.outputs.kubernetes_cluster_name }} --region ${{ needs.infra.outputs.primary_region }}
 
+      - name: Clean and Verify Secret Provider Setup
+        run: |
+          echo "Deleting old pods..."
+          kubectl delete pod -n app -l app=airflow-webserver --force --grace-period=0 || true
+          
+          echo "\nVerifying SecretProviderClass exists..."
+          if ! kubectl get secretproviderclass -n app airflow-portal-dev-secret-provider-class; then
+            echo "SecretProviderClass not found. Waiting for Terraform to create it..."
+            # Wait for SecretProviderClass to be created (adjust timeout as needed)
+            timeout=60
+            while [ $timeout -gt 0 ] && ! kubectl get secretproviderclass -n app airflow-portal-dev-secret-provider-class; do
+              sleep 5
+              timeout=$((timeout-5))
+              echo "Waiting for SecretProviderClass... ${timeout}s remaining"
+            done
+          fi
+          
+          echo "\nVerifying SecretProviderClass configuration..."
+          kubectl get secretproviderclass -n app airflow-portal-dev-secret-provider-class -o yaml
+          
+          echo "\nRestarting deployment to pick up new configuration..."
+          kubectl rollout restart deployment/airflow-webserver -n app
+          
+          echo "\nWaiting for deployment rollout..."
+          kubectl rollout status deployment/airflow-webserver -n app --timeout=300s
+
+      - name: Debug Status
+        run: |
+          echo "Checking pod status..."
+          kubectl get pods -n app -l app=airflow-webserver
+          
+          echo "\nChecking pod description..."
+          kubectl describe pod -n app -l app=airflow-webserver
+          
+          echo "\nChecking latest events..."
+          kubectl get events -n app --sort-by='.lastTimestamp' | tail -n 20
+
       # - name: Debug Secrets
       #   run: |
       #     echo "Checking AWS Secrets Manager..."
