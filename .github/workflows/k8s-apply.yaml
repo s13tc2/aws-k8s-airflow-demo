@@ -161,9 +161,9 @@ jobs:
           helm repo add aws-secrets-store https://aws.github.io/secrets-store-csi-driver-provider-aws
           helm repo update
 
-      - name: Remove Airflow Helm Repository
-        run: |
-          helm repo remove apache-airflow
+      # - name: Remove Airflow Helm Repository
+      #   run: |
+      #     helm repo remove apache-airflow
 
       - name: Install/Upgrade Secrets Store CSI Driver
         run: |
