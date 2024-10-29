@@ -2,7 +2,7 @@ data "helm_template" "airflow" {
   name       = "airflow"
   repository = "https://airflow.apache.org"
   chart      = "airflow"
-  version    = "1.15.0"  # Specify the version of the chart you want to use
+  version    = "1.0.0"  # Specify the version of the chart you want to use
 }
 
 resource "local_file" "airflow_values" {
