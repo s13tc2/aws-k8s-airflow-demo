@@ -109,31 +109,98 @@ jobs:
         run: |
           aws eks update-kubeconfig --name ${{ needs.infra.outputs.kubernetes_cluster_name }} --region ${{ needs.infra.outputs.primary_region }}
 
-      - name: Clean and Verify Secret Provider Setup
+      # - name: Clean and Verify Secret Provider Setup
+      #   run: |
+      #     echo "Deleting old pods..."
+      #     kubectl delete pod -n app -l app=airflow-webserver --force --grace-period=0 || true
+          
+      #     echo "\nVerifying SecretProviderClass exists..."
+      #     if ! kubectl get secretproviderclass -n app airflow-portal-dev-secret-provider-class; then
+      #       echo "SecretProviderClass not found. Waiting for Terraform to create it..."
+      #       # Wait for SecretProviderClass to be created (adjust timeout as needed)
+      #       timeout=60
+      #       while [ $timeout -gt 0 ] && ! kubectl get secretproviderclass -n app airflow-portal-dev-secret-provider-class; do
+      #         sleep 5
+      #         timeout=$((timeout-5))
+      #         echo "Waiting for SecretProviderClass... ${timeout}s remaining"
+      #       done
+      #     fi
+          
+      #     echo "\nVerifying SecretProviderClass configuration..."
+      #     kubectl get secretproviderclass -n app airflow-portal-dev-secret-provider-class -o yaml
+          
+      #     echo "\nRestarting deployment to pick up new configuration..."
+      #     kubectl rollout restart deployment/airflow-webserver -n app
+          
+      #     echo "\nWaiting for deployment rollout..."
+      #     kubectl rollout status deployment/airflow-webserver -n app --timeout=300s
+
+      - name: Create SecretProviderClass
         run: |
-          echo "Deleting old pods..."
-          kubectl delete pod -n app -l app=airflow-webserver --force --grace-period=0 || true
-          
-          echo "\nVerifying SecretProviderClass exists..."
-          if ! kubectl get secretproviderclass -n app airflow-portal-dev-secret-provider-class; then
-            echo "SecretProviderClass not found. Waiting for Terraform to create it..."
-            # Wait for SecretProviderClass to be created (adjust timeout as needed)
-            timeout=60
-            while [ $timeout -gt 0 ] && ! kubectl get secretproviderclass -n app airflow-portal-dev-secret-provider-class; do
-              sleep 5
-              timeout=$((timeout-5))
-              echo "Waiting for SecretProviderClass... ${timeout}s remaining"
-            done
-          fi
-          
-          echo "\nVerifying SecretProviderClass configuration..."
-          kubectl get secretproviderclass -n app airflow-portal-dev-secret-provider-class -o yaml
-          
-          echo "\nRestarting deployment to pick up new configuration..."
+          echo "Creating SecretProviderClass manifest..."
+          cat << 'EOF' > secretproviderclass.yaml
+          apiVersion: secrets-store.csi.x-k8s.io/v1
+          kind: SecretProviderClass
+          metadata:
+            name: airflow-portal-dev-secret-provider-class
+            namespace: app
+          spec:
+            provider: aws
+            parameters:
+              objects: |
+                - objectName: "airflow-portal-dev-connection-string"
+                  objectType: "secretsmanager"
+                  objectData:
+                    - key: "connection"
+                      objectAlias: "airflow-portal-dev-connection-string"
+                - objectName: "airflow-portal-dev-fernet-key"
+                  objectType: "secretsmanager"
+                  objectData:
+                    - key: "fernet_key"
+                      objectAlias: "airflow-portal-dev-fernet-key"
+            secretObjects:
+              - data:
+                  - key: connection
+                    objectName: "airflow-portal-dev-connection-string"
+                secretName: airflow-portal-dev-connection-string
+                type: Opaque
+              - data:
+                  - key: fernet_key
+                    objectName: "airflow-portal-dev-fernet-key"
+                secretName: airflow-portal-dev-fernet-key
+                type: Opaque
+          EOF
+
+          echo "Applying SecretProviderClass..."
+          kubectl apply -f secretproviderclass.yaml
+
+          echo "Verifying SecretProviderClass was created..."
+          kubectl get secretproviderclass -n app
+
+      - name: Restart Airflow Deployment
+        run: |
+          echo "Restarting deployment..."
           kubectl rollout restart deployment/airflow-webserver -n app
           
-          echo "\nWaiting for deployment rollout..."
+          echo "Waiting for rollout to complete..."
           kubectl rollout status deployment/airflow-webserver -n app --timeout=300s
+
+      - name: Verify Setup
+        run: |
+          echo "Checking pod status..."
+          kubectl get pods -n app -l app=airflow-webserver
+          
+          echo "\nChecking SecretProviderClass..."
+          kubectl get secretproviderclass -n app -o yaml
+          
+          echo "\nChecking Kubernetes secrets..."
+          kubectl get secrets -n app
+          
+          echo "\nChecking pod description..."
+          kubectl describe pod -n app -l app=airflow-webserver
+          
+          echo "\nChecking CSI driver logs..."
+          kubectl logs -n kube-system -l app=secrets-store-csi-driver --tail=50
 
       - name: Debug Status
         run: |
