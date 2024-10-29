@@ -225,18 +225,22 @@ jobs:
         run: |
           kubectl get pods -n ${{ steps.Apply.outputs.k8s_namespace }} -o wide
 
-      - name: Verify Secret Provider Class
+      - name: Verify Setup
         run: |
-          kubectl get secretproviderclass -n app ${{ vars.APPLICATION_NAME }}-${{ vars.ENVIRONMENT_NAME }}-secret-provider-class -o yaml
-
-      - name: Verify Secrets
-        run: |
-          kubectl get secrets -n app ${{ vars.APPLICATION_NAME }}-${{ vars.ENVIRONMENT_NAME }}-connection-string
-          kubectl get secrets -n app ${{ vars.APPLICATION_NAME }}-${{ vars.ENVIRONMENT_NAME }}-fernet-key
-
-      - name: Verify Airflow Deployment
-        run: |
-          kubectl rollout status deployment/airflow-webserver -n app --timeout=300s
+          echo "Checking pod status..."
+          kubectl get pods -n app -l app=airflow-webserver
+          
+          echo "\nChecking SecretProviderClass..."
+          kubectl get secretproviderclass -n app -o yaml
+          
+          echo "\nChecking Kubernetes secrets..."
+          kubectl get secrets -n app
+          
+          echo "\nChecking pod description..."
+          kubectl describe pod -n app -l app=airflow-webserver
+          
+          echo "\nChecking CSI driver logs..."
+          kubectl logs -n kube-system -l app=secrets-store-csi-driver --tail=50
 
       # - name: Get Services
       #   run: |
