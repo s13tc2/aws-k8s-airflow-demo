@@ -135,55 +135,6 @@ jobs:
       #     echo "\nWaiting for deployment rollout..."
       #     kubectl rollout status deployment/airflow-webserver -n app --timeout=300s
 
-      - name: Create SecretProviderClass
-        run: |
-          echo "Creating SecretProviderClass manifest..."
-          cat << 'EOF' > secretproviderclass.yaml
-          apiVersion: secrets-store.csi.x-k8s.io/v1
-          kind: SecretProviderClass
-          metadata:
-            name: airflow-portal-dev-secret-provider-class
-            namespace: app
-          spec:
-            provider: aws
-            parameters:
-              objects: |
-                - objectName: "airflow-portal-dev-connection-string"
-                  objectType: "secretsmanager"
-                  objectData:
-                    - key: "connection"
-                      objectAlias: "airflow-portal-dev-connection-string"
-                - objectName: "airflow-portal-dev-fernet-key"
-                  objectType: "secretsmanager"
-                  objectData:
-                    - key: "fernet_key"
-                      objectAlias: "airflow-portal-dev-fernet-key"
-            secretObjects:
-              - data:
-                  - key: connection
-                    objectName: "airflow-portal-dev-connection-string"
-                secretName: airflow-portal-dev-connection-string
-                type: Opaque
-              - data:
-                  - key: fernet_key
-                    objectName: "airflow-portal-dev-fernet-key"
-                secretName: airflow-portal-dev-fernet-key
-                type: Opaque
-          EOF
-
-          echo "Applying SecretProviderClass..."
-          kubectl apply -f secretproviderclass.yaml
-
-          echo "Verifying SecretProviderClass was created..."
-          kubectl get secretproviderclass -n app
-
-      - name: Restart Airflow Deployment
-        run: |
-          echo "Restarting deployment..."
-          kubectl rollout restart deployment/airflow-webserver -n app
-          
-          echo "Waiting for rollout to complete..."
-          kubectl rollout status deployment/airflow-webserver -n app --timeout=300s
 
       - name: Verify Setup
         run: |

@@ -47,7 +47,7 @@ resource "kubernetes_manifest" "secret_provider_class" {
     apiVersion = "secrets-store.csi.x-k8s.io/v1"
     kind = "SecretProviderClass"
     metadata = {
-      name = "${var.application_name}-${var.environment_name}-secret-provider-class"
+      name = "$airflow-portal-dev-secret-provider-class"
       namespace = var.k8s_namespace
     }
     spec = {
@@ -55,7 +55,7 @@ resource "kubernetes_manifest" "secret_provider_class" {
       parameters = {
         objects = yamlencode([
           {
-            objectName = local.secrets["airflow-portal-dev-connection-string"]
+            objectName = "airflow-portal-dev-connection-string"
             objectType = "secretsmanager"
             objectData = [
               {
@@ -65,7 +65,7 @@ resource "kubernetes_manifest" "secret_provider_class" {
             ]
           },
           {
-            objectName = local.secrets["airflow-portal-dev-fernet-key"]
+            objectName = "airflow-portal-dev-fernet-key"
             objectType = "secretsmanager"
             objectData = [
               {
@@ -81,7 +81,7 @@ resource "kubernetes_manifest" "secret_provider_class" {
           data = [
             {
               key = "connection"
-              objectName = local.secrets["airflow-portal-dev-connection-string"]
+              objectName = "airflow-portal-dev-connection-string"
             }
           ]
           secretName = "airflow-portal-dev-connection-string"
@@ -91,7 +91,7 @@ resource "kubernetes_manifest" "secret_provider_class" {
           data = [
             {
               key = "fernet_key"
-              objectName = local.secrets["airflow-portal-dev-fernet-key"]
+              objectName = "airflow-portal-dev-fernet-key"
             }
           ]
           secretName = "airflow-portal-dev-fernet-key"
