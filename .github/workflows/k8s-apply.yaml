@@ -111,22 +111,22 @@ jobs:
         run: |
           aws eks update-kubeconfig --name ${{ needs.infra.outputs.kubernetes_cluster_name }} --region ${{ needs.infra.outputs.primary_region }}
 
-      - name: Verify Setup
-        run: |
-          echo "Checking pod status..."
-          kubectl get pods -n app -l app=airflow-webserver
+      # - name: Verify Setup
+      #   run: |
+      #     echo "Checking pod status..."
+      #     kubectl get pods -n app -l app=airflow-webserver
           
-          echo "\nChecking SecretProviderClass..."
-          kubectl get secretproviderclass -n app -o yaml
+      #     echo "\nChecking SecretProviderClass..."
+      #     kubectl get secretproviderclass -n app -o yaml
           
-          echo "\nChecking Kubernetes secrets..."
-          kubectl get secrets -n app
+      #     echo "\nChecking Kubernetes secrets..."
+      #     kubectl get secrets -n app
           
-          echo "\nChecking pod description..."
-          kubectl describe pod -n app -l app=airflow-webserver
+      #     echo "\nChecking pod description..."
+      #     kubectl describe pod -n app -l app=airflow-webserver
           
-          echo "\nChecking CSI driver logs..."
-          kubectl logs -n kube-system -l app=secrets-store-csi-driver --tail=50
+      #     echo "\nChecking CSI driver logs..."
+      #     kubectl logs -n kube-system -l app=secrets-store-csi-driver --tail=50
 
       # - name: Delete Existing Resources
       #   run: |
@@ -159,8 +159,11 @@ jobs:
         run: |
           helm repo add secrets-store-csi-driver https://kubernetes-sigs.github.io/secrets-store-csi-driver/charts
           helm repo add aws-secrets-store https://aws.github.io/secrets-store-csi-driver-provider-aws
-          helm repo add apache-airflow https://airflow.apache.org
           helm repo update
+
+      - name: Remove Airflow Helm Repository
+        run: |
+          helm repo remove apache-airflow
 
       - name: Install/Upgrade Secrets Store CSI Driver
         run: |
