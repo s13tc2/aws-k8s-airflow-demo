@@ -37,8 +37,8 @@ resource "null_resource" "wait_for_crds" {
 
 locals {
   secrets = {
-    "airflow-portal-dev-connection-string" = aws_secretsmanager_secret.database_connection_string.name
-    "airflow-portal-dev-fernet-key" = aws_secretsmanager_secret.fernet_key.name
+    "airflow-portal-dev-connection-string" = "airflow-portal-dev-connection-string"
+    "airflow-portal-dev-fernet-key" = "airflow-portal-dev-fernet-key"
   }
 }
 
