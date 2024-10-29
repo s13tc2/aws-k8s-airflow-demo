@@ -1,4 +1,3 @@
-# Create the Helm template
 data "helm_template" "airflow" {
   name       = "airflow"
   repository = "https://airflow.apache.org"
@@ -8,31 +7,31 @@ data "helm_template" "airflow" {
   values = [
     yamlencode({
       executor = "KubernetesExecutor"
-    
+      # Add other necessary configurations here
     })
   ]
 }
 
-# Save the rendered values
 resource "local_file" "airflow_values" {
-  content  = data.helm_template.airflow.values[0]  # Access the first element of the values list
+  content  = data.helm_template.airflow.values
   filename = "${path.module}/values.yaml"
 }
 
-# Deploy Airflow
 resource "helm_release" "airflow" {
   name             = "airflow"
   repository       = "https://airflow.apache.org"
   chart            = "airflow"
   namespace        = "airflow"
   create_namespace = true
-  
+
   values = [
-    data.helm_template.airflow.values[0]  # Use values directly
+    file("${path.module}/values.yaml")
   ]
 
-  # Add timeout and other helm configurations for stability
+  depends_on = [
+    local_file.airflow_values
+  ]
+
   timeout = 600
   atomic  = true
-  wait    = true
 }
