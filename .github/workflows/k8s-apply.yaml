@@ -209,21 +209,6 @@ jobs:
           TF_VAR_connection_string_secret_name: ${{ vars.APPLICATION_NAME }}-${{ vars.ENVIRONMENT_NAME }}-connection-string
           TF_VAR_k8s_namespace: app
           TF_VAR_secret_provider_class_name: ${{ vars.APPLICATION_NAME }}-${{ vars.ENVIRONMENT_NAME }}-secret-provider-class
-
-      # Add verification steps after deployment
-      - name: Verify Secret Provider Class
-        run: |
-          kubectl get secretproviderclass -n app ${{ vars.APPLICATION_NAME }}-${{ vars.ENVIRONMENT_NAME }}-secret-provider-class -o yaml
-
-      - name: Verify Secrets
-        run: |
-          kubectl get secrets -n app ${{ vars.APPLICATION_NAME }}-${{ vars.ENVIRONMENT_NAME }}-connection-string
-          kubectl get secrets -n app ${{ vars.APPLICATION_NAME }}-${{ vars.ENVIRONMENT_NAME }}-fernet-key
-
-      - name: Verify Airflow Deployment
-        run: |
-          kubectl rollout status deployment/airflow-webserver -n app --timeout=300s
-          
         working-directory: ./src/terraform/k8s
         run: |
           terraform init \
@@ -239,6 +224,19 @@ jobs:
       - name: Get Pods Status
         run: |
           kubectl get pods -n ${{ steps.Apply.outputs.k8s_namespace }} -o wide
+
+      - name: Verify Secret Provider Class
+        run: |
+          kubectl get secretproviderclass -n app ${{ vars.APPLICATION_NAME }}-${{ vars.ENVIRONMENT_NAME }}-secret-provider-class -o yaml
+
+      - name: Verify Secrets
+        run: |
+          kubectl get secrets -n app ${{ vars.APPLICATION_NAME }}-${{ vars.ENVIRONMENT_NAME }}-connection-string
+          kubectl get secrets -n app ${{ vars.APPLICATION_NAME }}-${{ vars.ENVIRONMENT_NAME }}-fernet-key
+
+      - name: Verify Airflow Deployment
+        run: |
+          kubectl rollout status deployment/airflow-webserver -n app --timeout=300s
 
       # - name: Get Services
       #   run: |
