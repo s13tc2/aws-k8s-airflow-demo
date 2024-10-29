@@ -33,7 +33,7 @@ resource "kubernetes_deployment" "airflow" {
           }
         }
         container {
-          image = "292991734662.dkr.ecr.us-west-2.amazonaws.com/ecr-airflow-portal-dev-airflow:2024.10.13"
+          image = "292991734662.dkr.ecr.us-west-2.amazonaws.com/ecr-airflow-portal-dev-airflow:2024.10.14"
           name  = local.airflow_name
           port {
             container_port = 8080
