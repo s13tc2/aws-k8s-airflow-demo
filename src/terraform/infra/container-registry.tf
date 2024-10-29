@@ -1,5 +1,5 @@
 locals {
-  repository_list = ["public", "backend", "airflow"]
+  repository_list = ["frontend", "backend"]
   repositories    = { for name in local.repository_list : name => name }
 }
 

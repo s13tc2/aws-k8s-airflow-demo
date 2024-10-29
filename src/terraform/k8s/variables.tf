@@ -32,3 +32,15 @@ variable "alb_controller_role" {
 variable "workload_identity_role" {
   type = string
 }
+
+# Variables
+variable "airflow_admin_username" {
+  description = "Airflow admin username"
+  type        = string
+  default     = "admin"
+}
+variable "airflow_admin_password" {
+  description = "Airflow admin password"
+  type        = string
+  sensitive   = true
+}

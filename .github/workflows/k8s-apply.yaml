@@ -4,22 +4,21 @@ on:
   workflow_dispatch:
     inputs:
       environment:
-        description: 'Environment to run tests against'
+        description: "Environment to run tests against"
         type: environment
         required: true
 
 env:
-  TERRAFORM_VERSION: '1.5.7'
-  K8S_NAMESPACE: 'app'  # Add namespace env var
-  INGRESS_CONTROLLER_NAMESPACE: 'kube-system'
+  TERRAFORM_VERSION: "1.5.7"
+  K8S_NAMESPACE: "app" # Add namespace env var
+  INGRESS_CONTROLLER_NAMESPACE: "kube-system"
 
 jobs:
-
   infra:
     runs-on: ubuntu-latest
     outputs:
-      airflow_repository: ${{ steps.apply.outputs.airflow_repository }}
-      airflow_repository_url: ${{ steps.apply.outputs.airflow_repository_url }}
+      # airflow_repository: ${{ steps.apply.outputs.airflow_repository }}
+      # airflow_repository_url: ${{ steps.apply.outputs.airflow_repository_url }}
       kubernetes_cluster_name: ${{ steps.apply.outputs.kubernetes_cluster_name }}
       primary_region: ${{ steps.apply.outputs.primary_region }}
       console_role: ${{ steps.apply.outputs.console_role }}
@@ -74,16 +73,15 @@ jobs:
           admin_group=$(terraform output -raw admin_group_arn)
           echo "admin_group=$admin_group" >> "$GITHUB_OUTPUT"
 
-          airflow_repository=$(terraform output -raw airflow_repository)
-          echo "airflow_repository=$airflow_repository" >> "$GITHUB_OUTPUT"
+          # airflow_repository=$(terraform output -raw airflow_repository)
+          # echo "airflow_repository=$airflow_repository" >> "$GITHUB_OUTPUT"
 
-          airflow_repository_url=$(terraform output -raw airflow_repository_url)
-          echo "airflow_repository_url=$airflow_repository_url" >> "$GITHUB_OUTPUT"
+          # airflow_repository_url=$(terraform output -raw airflow_repository_url)
+          # echo "airflow_repository_url=$airflow_repository_url" >> "$GITHUB_OUTPUT"
 
   k8s:
     runs-on: ubuntu-latest
     needs: infra
-
     environment:
       name: ${{ inputs.environment }}
 
@@ -111,42 +109,36 @@ jobs:
         run: |
           aws eks update-kubeconfig --name ${{ needs.infra.outputs.kubernetes_cluster_name }} --region ${{ needs.infra.outputs.primary_region }}
 
-      # - name: Verify Setup
-      #   run: |
-      #     echo "Checking pod status..."
-      #     kubectl get pods -n app -l app=airflow-webserver
-          
-      #     echo "\nChecking SecretProviderClass..."
-      #     kubectl get secretproviderclass -n app -o yaml
-          
-      #     echo "\nChecking Kubernetes secrets..."
-      #     kubectl get secrets -n app
-          
-      #     echo "\nChecking pod description..."
-      #     kubectl describe pod -n app -l app=airflow-webserver
-          
-      #     echo "\nChecking CSI driver logs..."
-      #     kubectl logs -n kube-system -l app=secrets-store-csi-driver --tail=50
-
-      # - name: Delete Existing Resources
-      #   run: |
-      #     kubectl delete deployment airflow-webserver -n app --ignore-not-found=true
-      #     kubectl delete ingress airflow-webserver-ingress -n app --ignore-not-found=true
-      #     kubectl delete service airflow-webserver-service -n app --ignore-not-found=true
-          
-      #     # Wait a few seconds to ensure resources are fully deleted
-      #     sleep 10
-      
-      - name: Get Pods Status
-        run: |
-          kubectl get pods -n app -o wide
-
       - name: Install kubectl
         run: |
           curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
           chmod +x kubectl
           sudo mv kubectl /usr/local/bin/
           kubectl version --client
+
+      # - name: Pre-deployment Checks
+      #   run: |
+      #     echo "Checking EBS CSI Driver installation..."
+      #     kubectl get pods -n kube-system | grep ebs-csi
+
+      #     echo "Checking existing storage classes..."
+      #     kubectl get storageclass
+
+      #     echo "Checking node capacity..."
+      #     kubectl describe nodes | grep -A 5 "Allocated resources"
+
+      #     echo "Checking existing PVCs..."
+      #     kubectl get pvc -n airflow
+
+      #     echo "Checking existing pods..."
+      #     kubectl get pods -n airflow
+
+      #     echo "Checking existing events..."
+      #     kubectl get events -n airflow --sort-by='.lastTimestamp'
+
+      #     echo "Checking cluster status..."
+      #     kubectl get nodes
+      #     kubectl top nodes || echo "Metrics server might not be installed"
 
       - name: Install Helm
         run: |
@@ -155,120 +147,76 @@ jobs:
           ./get_helm.sh
           helm version
 
-      - name: Add Helm Repositories
-        run: |
-          helm repo add secrets-store-csi-driver https://kubernetes-sigs.github.io/secrets-store-csi-driver/charts
-          helm repo add aws-secrets-store https://aws.github.io/secrets-store-csi-driver-provider-aws
-          helm repo update
+          helm repo add apache-airflow https://airflow.apache.org
+          helm upgrade --install airflow apache-airflow/airflow --namespace airflow --create-namespace
 
-      - name: Remove Airflow Helm Repository
-        run: |
-          helm list -n airflow
-          helm delete airflow -n airflow
-
-      - name: Install/Upgrade Secrets Store CSI Driver
-        run: |
-          helm upgrade --install csi-secrets-store secrets-store-csi-driver/secrets-store-csi-driver \
-            --namespace kube-system \
-            --create-namespace \
-            --set syncSecret.enabled=true \
-            --set installCRDs=true
-
-      - name: Install/Upgrade AWS Secrets Provider
-        run: |
-          helm upgrade --install secrets-provider-aws aws-secrets-store/secrets-store-csi-driver-provider-aws \
-            --namespace kube-system
-                
-      - name: Wait for CRDs to be Established
-        run: |
-          kubectl wait --for=condition=established crd secretproviderclasses.secrets-store.csi.x-k8s.io --timeout=120s
-          kubectl wait --for=condition=established crd secretproviderclasspodstatuses.secrets-store.csi.x-k8s.io --timeout=120s
-        
-      # - name: Delete Existing Resources
+      # - name: Clean up existing deployment
       #   run: |
-      #     kubectl delete deployment airflow-webserver -n app --ignore-not-found=true
-      #     kubectl delete ingress airflow-webserver-ingress -n app --ignore-not-found=true
-      #     kubectl delete service airflow-webserver-service -n app --ignore-not-found=true
-          
-      #     # Wait a few seconds to ensure resources are fully deleted
-      #     sleep 10
+      #     echo "Cleaning up existing Airflow namespace..."
+      #     kubectl delete namespace airflow --ignore-not-found=true
 
-      - id: Apply
-        name: Terraform Apply
-        env:
-          AWS_ACCESS_KEY_ID: ${{ vars.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_REGION: ${{ needs.infra.outputs.primary_region }}
-          AWS_DEFAULT_REGION: ${{ needs.infra.outputs.primary_region }}
-          BACKEND_BUCKET_NAME: ${{ vars.BUCKET_NAME }}
-          BACKEND_REGION: ${{ vars.BUCKET_REGION }}
-          BACKEND_KEY: ${{ vars.APPLICATION_NAME }}-${{ vars.ENVIRONMENT_NAME }}-k8s
-          TF_VAR_application_name: ${{ vars.APPLICATION_NAME }}
-          TF_VAR_environment_name: ${{ vars.ENVIRONMENT_NAME }}
-          TF_VAR_cluster_name: ${{ needs.infra.outputs.kubernetes_cluster_name }}
-          TF_VAR_primary_region: ${{ needs.infra.outputs.primary_region }}
-          TF_VAR_alb_controller_role: ${{ needs.infra.outputs.alb_controller_role }}
-          TF_VAR_workload_identity_role: ${{ needs.infra.outputs.workload_identity_role }}
-          # Add these environment variables to match your Terraform configuration
-          TF_VAR_fernet_key_secret_name: ${{ vars.APPLICATION_NAME }}-${{ vars.ENVIRONMENT_NAME }}-fernet-key
-          TF_VAR_connection_string_secret_name: ${{ vars.APPLICATION_NAME }}-${{ vars.ENVIRONMENT_NAME }}-connection-string
-          TF_VAR_k8s_namespace: app
-          TF_VAR_secret_provider_class_name: ${{ vars.APPLICATION_NAME }}-${{ vars.ENVIRONMENT_NAME }}-secret-provider-class
-        working-directory: ./src/terraform/k8s
+      #     echo "Waiting for namespace deletion..."
+      #     kubectl wait --for=delete namespace/airflow --timeout=300s || true
+
+      #     echo "Creating new Airflow namespace..."
+      #     kubectl create namespace airflow
+
+      # - id: Apply
+      #   name: Terraform Apply
+      #   env:
+      #     AWS_ACCESS_KEY_ID: ${{ vars.AWS_ACCESS_KEY_ID }}
+      #     AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      #     AWS_REGION: ${{ needs.infra.outputs.primary_region }}
+      #     AWS_DEFAULT_REGION: ${{ needs.infra.outputs.primary_region }}
+      #     BACKEND_BUCKET_NAME: ${{ vars.BUCKET_NAME }}
+      #     BACKEND_REGION: ${{ vars.BUCKET_REGION }}
+      #     BACKEND_KEY: ${{ vars.APPLICATION_NAME }}-${{ vars.ENVIRONMENT_NAME }}-k8s
+      #     TF_VAR_application_name: ${{ vars.APPLICATION_NAME }}
+      #     TF_VAR_environment_name: ${{ vars.ENVIRONMENT_NAME }}
+      #     TF_VAR_cluster_name: ${{ needs.infra.outputs.kubernetes_cluster_name }}
+      #     TF_VAR_primary_region: ${{ needs.infra.outputs.primary_region }}
+      #     TF_VAR_alb_controller_role: ${{ needs.infra.outputs.alb_controller_role }}
+      #     TF_VAR_workload_identity_role: ${{ needs.infra.outputs.workload_identity_role }}
+      #     TF_VAR_fernet_key_secret_name: ${{ vars.APPLICATION_NAME }}-${{ vars.ENVIRONMENT_NAME }}-fernet-key
+      #     TF_VAR_connection_string_secret_name: ${{ vars.APPLICATION_NAME }}-${{ vars.ENVIRONMENT_NAME }}-connection-string
+      #   working-directory: ./src/terraform/k8s
+      #   run: |
+      #     terraform init \
+      #       -backend-config='bucket='$BACKEND_BUCKET_NAME \
+      #       -backend-config='region='$BACKEND_REGION \
+      #       -backend-config="key=${{ vars.APPLICATION_NAME }}-${{ vars.ENVIRONMENT_NAME }}-k8s"
+
+      #     terraform apply -auto-approve
+
+      - name: Post-deployment Checks
         run: |
-          terraform init \
-            -backend-config='bucket='$BACKEND_BUCKET_NAME \
-            -backend-config='region='$BACKEND_REGION \
-            -backend-config="key=${{ vars.APPLICATION_NAME }}-${{ vars.ENVIRONMENT_NAME }}-k8s"
-              
-          terraform apply -auto-approve
+          echo "Waiting for pods to be ready..."
+          kubectl wait --for=condition=ready pod -l component=webserver -n airflow --timeout=600s || true
+          kubectl wait --for=condition=ready pod -l component=scheduler -n airflow --timeout=600s || true
 
-          k8s_namespace=$(terraform output -raw k8s_namespace)
-          echo "k8s_namespace=$k8s_namespace" >> "$GITHUB_OUTPUT"
-
-      - name: Get Pods Status
-        run: |
-          kubectl get pods -n ${{ steps.Apply.outputs.k8s_namespace }} -o wide
-
-      - name: Verify Setup
-        run: |
           echo "Checking pod status..."
-          kubectl get pods -n app -l app=airflow-webserver
-          
-          echo "\nChecking SecretProviderClass..."
-          kubectl get secretproviderclass -n app -o yaml
-          
-          echo "\nChecking Kubernetes secrets..."
-          kubectl get secrets -n app
-          
-          echo "\nChecking pod description..."
-          kubectl describe pod -n app -l app=airflow-webserver
-          
-          echo "\nChecking CSI driver logs..."
-          kubectl logs -n kube-system -l app=secrets-store-csi-driver --tail=50
+          kubectl get pods -n airflow
 
-      # - name: Get Services
-      #   run: |
-      #     kubectl get services -n ${{ steps.Apply.outputs.k8s_namespace }}
-      
-      # - name: Validate airflow Service Endpoints
-      #   run: |
-      #     kubectl get endpoints airflow-service -n ${{ steps.Apply.outputs.k8s_namespace }} || exit 1
+          echo "Checking PVC status..."
+          kubectl get pvc -n airflow
 
-      # - name: Get Events
-      #   run: |
-      #     kubectl get events -n ${{ steps.Apply.outputs.k8s_namespace }} --sort-by='.lastTimestamp'
+          echo "Checking pod logs..."
+          for pod in $(kubectl get pods -n airflow -o name); do
+            echo "=== Logs for $pod ==="
+            kubectl logs $pod -n airflow --tail=50 || true
+          done
 
-      # - name: Get Application Pod Logs
-      #   run: |
-      #     for pod in $(kubectl get pods -n ${{ steps.Apply.outputs.k8s_namespace }} -l app=airflow -o jsonpath='{.items[*].metadata.name}'); do
-      #       echo "Logs for airflow pod: $pod"
-      #       kubectl logs $pod -n ${{ steps.Apply.outputs.k8s_namespace }}
-      #     done
-      #     for pod in $(kubectl get pods -n ${{ steps.Apply.outputs.k8s_namespace }} -l app=airflow -o jsonpath='{.items[*].metadata.name}'); do
-      #       echo "Logs for airflow pod: $pod"
-      #       kubectl logs $pod -n ${{ steps.Apply.outputs.k8s_namespace }}
-      #     done
+          echo "Checking events..."
+          kubectl get events -n airflow --sort-by='.lastTimestamp'
+
+          echo "Checking service status..."
+          kubectl get svc -n airflow
+
+          echo "Checking storage class..."
+          kubectl get storageclass
+
+          echo "Checking persistent volumes..."
+          kubectl get pv
 
       - name: Setup eksctl
         run: |
@@ -284,7 +232,7 @@ jobs:
 
           eksctl version
 
-      - name: Test eksctl command
+      - name: Configure IAM Mappings
         run: |
           eksctl get clusters
           eksctl get iamidentitymapping --cluster ${{ needs.infra.outputs.kubernetes_cluster_name }} --region=${{ needs.infra.outputs.primary_region }}

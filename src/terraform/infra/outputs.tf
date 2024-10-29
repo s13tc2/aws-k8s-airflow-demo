@@ -1,10 +1,10 @@
-output "airflow_repository" {
-  value = aws_ecr_repository.main["airflow"].name
-}
+# output "airflow_repository" {
+#   value = aws_ecr_repository.main["airflow"].name
+# }
 
-output "airflow_repository_url" {
-  value = "${aws_ecr_repository.main["airflow"].repository_url}"
-}
+# output "airflow_repository_url" {
+#   value = "${aws_ecr_repository.main["airflow"].repository_url}"
+# }
 
 output "kubernetes_cluster_name" {
   value = aws_eks_cluster.main.name

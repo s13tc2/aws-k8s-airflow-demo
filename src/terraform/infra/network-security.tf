@@ -71,3 +71,34 @@ resource "aws_security_group_rule" "nodeport" {
   description       = "nodeport"
   protocol          = "tcp"
 }
+
+# Add these to network-security.tf
+resource "aws_security_group_rule" "nodes_internal" {
+  security_group_id = aws_security_group.cluster_nodes.id
+  type             = "ingress"
+  from_port        = 0
+  to_port          = 0
+  protocol         = "-1"
+  self             = true
+  description      = "Allow nodes to communicate with each other"
+}
+
+resource "aws_security_group_rule" "cluster_to_nodes" {
+  security_group_id        = aws_security_group.cluster_nodes.id
+  type                    = "ingress"
+  from_port               = 0
+  to_port                = 65535
+  protocol               = "-1"
+  source_security_group_id = aws_security_group.cluster.id
+  description            = "Allow control plane to communicate with nodes"
+}
+
+resource "aws_security_group_rule" "nodes_to_cluster" {
+  security_group_id        = aws_security_group.cluster.id
+  type                    = "ingress"
+  from_port               = 0
+  to_port                = 65535
+  protocol               = "-1"
+  source_security_group_id = aws_security_group.cluster_nodes.id
+  description            = "Allow nodes to communicate with control plane"
+}

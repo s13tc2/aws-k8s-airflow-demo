@@ -1,6 +1,6 @@
 # network-public.tf (renamed from network-frontend.tf)
 
-resource "aws_subnet" "public" {           # renamed from "frontend"
+resource "aws_subnet" "frontend" {           # renamed from "frontend"
   for_each = local.public_subnets
   vpc_id = aws_vpc.main.id
   availability_zone = each.value.availability_zone
@@ -9,7 +9,7 @@ resource "aws_subnet" "public" {           # renamed from "frontend"
 }
 
 # Route table for public subnets (internet access via IGW)
-resource "aws_route_table" "public" {      # renamed from "frontend"
+resource "aws_route_table" "frontend" {      # renamed from "frontend"
   vpc_id = aws_vpc.main.id
   route {
     cidr_block = "0.0.0.0/0"
@@ -21,8 +21,8 @@ resource "aws_route_table" "public" {      # renamed from "frontend"
   ]
 }
 
-resource "aws_route_table_association" "public" {    # renamed from "frontend"
-  for_each = aws_subnet.public
+resource "aws_route_table_association" "frontend" {    # renamed from "frontend"
+  for_each = aws_subnet.frontend
   subnet_id = each.value.id
-  route_table_id = aws_route_table.public.id
+  route_table_id = aws_route_table.frontend.id
 }
