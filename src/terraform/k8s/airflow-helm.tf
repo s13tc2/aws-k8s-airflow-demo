@@ -13,7 +13,7 @@ data "helm_template" "airflow" {
 }
 
 resource "local_file" "airflow_values" {
-  content  = data.helm_template.airflow.values
+  content  = join("\n", data.helm_template.airflow.values)
   filename = "${path.module}/values.yaml"
 }
 
