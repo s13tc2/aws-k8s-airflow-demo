@@ -13,3 +13,7 @@ output "k8s_namespace" {
 # output "web_airflow_version" {
 #   value = var.web_airflow_image.version
 # }
+
+output "airflow_helm_template" {
+    value = data.helm_template.airflow.values
+}
