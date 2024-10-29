@@ -45,10 +45,10 @@ resource "null_resource" "wait_for_crds" {
 resource "kubernetes_manifest" "secret_provider_class" {
   manifest = {
     apiVersion = "secrets-store.csi.x-k8s.io/v1"
-    kind = "SecretProviderClass"
+    kind       = "SecretProviderClass"
     metadata = {
-      name = "$airflow-portal-dev-secret-provider-class"
-      namespace = var.k8s_namespace
+      name      = "airflow-portal-dev-secret-provider-class"  # Fixed string interpolation
+      namespace = var.k8s_namespace                           # Fixed variable reference
     }
     spec = {
       provider = "aws"
@@ -59,8 +59,8 @@ resource "kubernetes_manifest" "secret_provider_class" {
             objectType = "secretsmanager"
             objectData = [
               {
-                key = "airflow-portal-dev-connection-string"
-                objectAlias = "airflow-portal-dev-connection-string"  # Add this line
+                key         = "connection"                    # Changed to match secret key
+                objectAlias = "connection"                    # Changed to match secret key
               }
             ]
           },
@@ -69,8 +69,8 @@ resource "kubernetes_manifest" "secret_provider_class" {
             objectType = "secretsmanager"
             objectData = [
               {
-                key = "airflow-portal-dev-fernet-key"
-                objectAlias = "airflow-portal-dev-fernet-key"  # Add this line
+                key         = "fernet_key"                    # Changed to match secret key
+                objectAlias = "fernet_key"                    # Changed to match secret key
               }
             ]
           }
@@ -80,22 +80,22 @@ resource "kubernetes_manifest" "secret_provider_class" {
         {
           data = [
             {
-              key = "airflow-portal-dev-connection-string"
+              key        = "connection"                       # Changed to match key
               objectName = "airflow-portal-dev-connection-string"
             }
           ]
           secretName = "airflow-portal-dev-connection-string"
-          type = "Opaque"
+          type       = "Opaque"
         },
         {
           data = [
             {
-              key = "airflow-portal-dev-connection-string"
-              objectName = "airflow-portal-dev-fernet-key"
+              key        = "fernet_key"                       # Changed to match key
+              objectName = "airflow-portal-dev-fernet-key"    # Fixed object name reference
             }
           ]
           secretName = "airflow-portal-dev-fernet-key"
-          type = "Opaque"
+          type       = "Opaque"
         }
       ]
     }

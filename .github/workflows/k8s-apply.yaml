@@ -10,6 +10,8 @@ on:
 
 env:
   TERRAFORM_VERSION: '1.5.7'
+  K8S_NAMESPACE: 'app'  # Add namespace env var
+  INGRESS_CONTROLLER_NAMESPACE: 'kube-system'
 
 jobs:
 
@@ -126,10 +128,6 @@ jobs:
           echo "\nChecking CSI driver logs..."
           kubectl logs -n kube-system -l app=secrets-store-csi-driver --tail=50
 
-      - name: Get Pods Status
-        run: |
-          kubectl get pods -n app -o wide
-
       # - name: Delete Existing Resources
       #   run: |
       #     kubectl delete deployment airflow-webserver -n app --ignore-not-found=true
@@ -139,41 +137,6 @@ jobs:
       #     # Wait a few seconds to ensure resources are fully deleted
       #     sleep 10
       
-      - name: List All Pods
-        run: |
-          kubectl get pods --all-namespaces -o wide
-
-      # - name: Debug Container Config Error
-      #   run: |
-      #     echo "Pod Description:"
-      #     kubectl describe pod -n app -l app=airflow-webserver      
-      #     echo "\nPod Events:"
-      #     kubectl get events -n app --sort-by='.lastTimestamp' | grep airflow-webserver
-          
-      #     echo "\nContainer Logs (if any):"
-      #     kubectl logs -n app -l app=airflow-webserver --all-containers=true --previous      
-      #     echo "\nDeployment Configuration:"
-      #     kubectl get deployment -n app airflow-webserver -o yaml
-
-      # - name: Debug Secret Provider Class Names
-      #   run: |
-      #     echo "Expected Secret Provider Class name:"
-      #     terraform output secret_provider_class_name
-          
-      #     echo "Actual Secret Provider Classes in cluster:"
-      #     kubectl get secretproviderclass -n app -o name
-
-      # - name: Debug Secret Provider
-      #   run: |
-      #     echo "Checking Secret Provider Class..."
-      #     kubectl get secretproviderclass -n app
-          
-      #     echo "Checking Secret Provider Class Details..."
-      #     kubectl get secretproviderclass airflow-portal-dev-secret-provider-class -n app -o yaml
-          
-      #     echo "Checking Secrets Store CSI Driver Logs..."
-      #     kubectl logs -n kube-system -l app=secrets-store-csi-driver
-          
       - name: Get Pods Status
         run: |
           kubectl get pods -n app -o wide
@@ -197,14 +160,6 @@ jobs:
           helm repo add secrets-store-csi-driver https://kubernetes-sigs.github.io/secrets-store-csi-driver/charts
           helm repo add aws-secrets-store https://aws.github.io/secrets-store-csi-driver-provider-aws
           helm repo update
-
-      # - name: Uninstall Secrets Store CSI Driver
-      #   run: |
-      #     helm uninstall csi-secrets-store --namespace kube-system
-
-      # - name: Uninstall AWS Secrets Provider
-      #   run: |
-      #     helm uninstall secrets-provider-aws --namespace kube-system
 
       - name: Install/Upgrade Secrets Store CSI Driver
         run: |
@@ -249,13 +204,26 @@ jobs:
           TF_VAR_primary_region: ${{ needs.infra.outputs.primary_region }}
           TF_VAR_alb_controller_role: ${{ needs.infra.outputs.alb_controller_role }}
           TF_VAR_workload_identity_role: ${{ needs.infra.outputs.workload_identity_role }}
-          TF_VAR_secret_name: ${{ vars.APPLICATION_NAME }}-${{ vars.ENVIRONMENT_NAME }}-connection-string
-          TF_VAR_secret_key: ${{ secrets.DB_CONNECTION_STRING_KEY }}
-          TF_VAR_k8s_namespace: ${{ env.K8S_NAMESPACE }}
-          TF_VAR_ingress_controller_namespace: ${{ env.INGRESS_CONTROLLER_NAMESPACE }}
-          TF_VAR_airflow_repository: ${{ needs.infra.outputs.airflow_repository }}
-          TF_VAR_airflow_repository_url: ${{ needs.infra.outputs.airflow_repository_url }}
-          TF_VAR_airflow_connection_string: "postgresql+psycopg2://airflow:airflow@localhost:5432/airflow"  # Add this
+          # Add these environment variables to match your Terraform configuration
+          TF_VAR_fernet_key_secret_name: ${{ vars.APPLICATION_NAME }}-${{ vars.ENVIRONMENT_NAME }}-fernet-key
+          TF_VAR_connection_string_secret_name: ${{ vars.APPLICATION_NAME }}-${{ vars.ENVIRONMENT_NAME }}-connection-string
+          TF_VAR_k8s_namespace: app
+          TF_VAR_secret_provider_class_name: ${{ vars.APPLICATION_NAME }}-${{ vars.ENVIRONMENT_NAME }}-secret-provider-class
+
+      # Add verification steps after deployment
+      - name: Verify Secret Provider Class
+        run: |
+          kubectl get secretproviderclass -n app ${{ vars.APPLICATION_NAME }}-${{ vars.ENVIRONMENT_NAME }}-secret-provider-class -o yaml
+
+      - name: Verify Secrets
+        run: |
+          kubectl get secrets -n app ${{ vars.APPLICATION_NAME }}-${{ vars.ENVIRONMENT_NAME }}-connection-string
+          kubectl get secrets -n app ${{ vars.APPLICATION_NAME }}-${{ vars.ENVIRONMENT_NAME }}-fernet-key
+
+      - name: Verify Airflow Deployment
+        run: |
+          kubectl rollout status deployment/airflow-webserver -n app --timeout=300s
+          
         working-directory: ./src/terraform/k8s
         run: |
           terraform init \
@@ -268,33 +236,32 @@ jobs:
           k8s_namespace=$(terraform output -raw k8s_namespace)
           echo "k8s_namespace=$k8s_namespace" >> "$GITHUB_OUTPUT"
 
-      # Debugging Steps Start Here
       - name: Get Pods Status
         run: |
           kubectl get pods -n ${{ steps.Apply.outputs.k8s_namespace }} -o wide
 
-      - name: Get Services
-        run: |
-          kubectl get services -n ${{ steps.Apply.outputs.k8s_namespace }}
+      # - name: Get Services
+      #   run: |
+      #     kubectl get services -n ${{ steps.Apply.outputs.k8s_namespace }}
       
-      - name: Validate airflow Service Endpoints
-        run: |
-          kubectl get endpoints airflow-service -n ${{ steps.Apply.outputs.k8s_namespace }} || exit 1
+      # - name: Validate airflow Service Endpoints
+      #   run: |
+      #     kubectl get endpoints airflow-service -n ${{ steps.Apply.outputs.k8s_namespace }} || exit 1
 
-      - name: Get Events
-        run: |
-          kubectl get events -n ${{ steps.Apply.outputs.k8s_namespace }} --sort-by='.lastTimestamp'
+      # - name: Get Events
+      #   run: |
+      #     kubectl get events -n ${{ steps.Apply.outputs.k8s_namespace }} --sort-by='.lastTimestamp'
 
-      - name: Get Application Pod Logs
-        run: |
-          for pod in $(kubectl get pods -n ${{ steps.Apply.outputs.k8s_namespace }} -l app=airflow -o jsonpath='{.items[*].metadata.name}'); do
-            echo "Logs for airflow pod: $pod"
-            kubectl logs $pod -n ${{ steps.Apply.outputs.k8s_namespace }}
-          done
-          for pod in $(kubectl get pods -n ${{ steps.Apply.outputs.k8s_namespace }} -l app=airflow -o jsonpath='{.items[*].metadata.name}'); do
-            echo "Logs for airflow pod: $pod"
-            kubectl logs $pod -n ${{ steps.Apply.outputs.k8s_namespace }}
-          done
+      # - name: Get Application Pod Logs
+      #   run: |
+      #     for pod in $(kubectl get pods -n ${{ steps.Apply.outputs.k8s_namespace }} -l app=airflow -o jsonpath='{.items[*].metadata.name}'); do
+      #       echo "Logs for airflow pod: $pod"
+      #       kubectl logs $pod -n ${{ steps.Apply.outputs.k8s_namespace }}
+      #     done
+      #     for pod in $(kubectl get pods -n ${{ steps.Apply.outputs.k8s_namespace }} -l app=airflow -o jsonpath='{.items[*].metadata.name}'); do
+      #       echo "Logs for airflow pod: $pod"
+      #       kubectl logs $pod -n ${{ steps.Apply.outputs.k8s_namespace }}
+      #     done
 
       - name: Setup eksctl
         run: |
