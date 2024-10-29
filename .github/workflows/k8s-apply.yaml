@@ -109,72 +109,65 @@ jobs:
         run: |
           aws eks update-kubeconfig --name ${{ needs.infra.outputs.kubernetes_cluster_name }} --region ${{ needs.infra.outputs.primary_region }}
 
-      - name: Check Pod Status
+      - name: Debug Secret Provider Issues
         run: |
           echo "Checking pod status..."
-          kubectl get pods -n ${{ inputs.namespace }} -l app=${{ inputs.deployment-name }} -o wide
-          echo "-----------------------------------"
-
-      - name: Check SecretProviderClass
-        run: |
-          echo "Checking SecretProviderClass..."
-          kubectl get SecretProviderClass -n ${{ inputs.namespace }} \
-            airflow-portal-dev-secret-provider-class -o yaml || \
+          kubectl get pods -n app -l app=airflow-webserver -o wide
+          
+          echo "\nChecking SecretProviderClass..."
+          kubectl get SecretProviderClass -n app airflow-portal-dev-secret-provider-class -o yaml || \
             echo "SecretProviderClass not found"
-          echo "-----------------------------------"
-
-      - name: Check Kubernetes Secrets
-        run: |
-          echo "Checking Kubernetes secrets..."
-          kubectl get secrets -n ${{ inputs.namespace }} | grep airflow-portal-dev
-          echo "-----------------------------------"
-
-      - name: Check Pod Descriptions
-        run: |
-          echo "Checking pod descriptions..."
-          for pod in $(kubectl get pods -n ${{ inputs.namespace }} -l app=${{ inputs.deployment-name }} -o name); do
+          
+          echo "\nChecking Kubernetes secrets..."
+          kubectl get secrets -n app | grep airflow-portal-dev
+          
+          echo "\nChecking pod descriptions..."
+          for pod in $(kubectl get pods -n app -l app=airflow-webserver -o name); do
             echo "Description for $pod:"
-            kubectl describe $pod -n ${{ inputs.namespace }}
+            kubectl describe $pod -n app
             echo "-----------------------------------"
           done
 
-      - name: Check Pod Logs
-        run: |
-          echo "Checking pod logs..."
-          for pod in $(kubectl get pods -n ${{ inputs.namespace }} -l app=${{ inputs.deployment-name }} -o name); do
+          echo "\nChecking pod logs..."
+          for pod in $(kubectl get pods -n app -l app=airflow-webserver -o name); do
             echo "Logs for $pod:"
-            kubectl logs $pod -n ${{ inputs.namespace }} --previous || true
-            kubectl logs $pod -n ${{ inputs.namespace }} || true
+            kubectl logs $pod -n app --previous || true
+            kubectl logs $pod -n app || true
             echo "-----------------------------------"
           done
 
-      - name: Check CSI Driver Status
-        run: |
-          echo "Checking CSI driver status..."
+          echo "\nChecking CSI driver status..."
           kubectl get pods -n kube-system -l app=secrets-store-csi-driver
-          echo "-----------------------------------"
-
-      - name: Check Node Status
-        run: |
-          echo "Checking node status..."
+          echo "\nCSI driver logs:"
+          kubectl logs -n kube-system -l app=secrets-store-csi-driver --tail=50
+          
+          echo "\nChecking node status..."
           kubectl get nodes
-          echo "-----------------------------------"
+          
+          echo "\nChecking events..."
+          kubectl get events -n app --sort-by='.lastTimestamp'
 
-      - name: Check Events
+      - name: Verify Secret Configuration
         run: |
-          echo "Checking namespace events..."
-          kubectl get events -n ${{ inputs.namespace }} --sort-by='.lastTimestamp'
-          echo "-----------------------------------"
+          echo "Current SecretProviderClass configuration:"
+          kubectl get secretproviderclass -n app -o yaml
+          
+          echo "\nKubernetes Secrets:"
+          kubectl get secrets -n app
+          
+          echo "\nSecret mount status in pods:"
+          kubectl describe pods -n app -l app=airflow-webserver | grep -A 5 Volumes
 
-      - name: Create Debug Summary
+      - name: Check Container Configuration
         run: |
-          echo "Debug Summary" > debug_summary.txt
-          echo "==============" >> debug_summary.txt
-          echo "1. Check if SecretProviderClass exists in correct namespace" >> debug_summary.txt
-          echo "2. Verify secret keys match between SecretProviderClass and pod spec" >> debug_summary.txt
-          echo "3. Confirm CSI driver is running" >> debug_summary.txt
-          echo "4. Verify AWS IAM roles and permissions" >> debug_summary.txt
-          echo "5. Check for any node issues or resource constraints" >> debug_summary.txt
+          echo "Pod Description with Config Details:"
+          kubectl describe pod -n app -l app=airflow-webserver
+          
+          echo "\nDeployment Configuration:"
+          kubectl get deployment -n app airflow-webserver -o yaml
+          
+          echo "\nLatest Events:"
+          kubectl get events -n app --sort-by='.lastTimestamp' | tail -n 20
 
       # - name: Clean and Verify Secret Provider Setup
       #   run: |
