@@ -59,7 +59,7 @@ resource "kubernetes_manifest" "secret_provider_class" {
             objectType = "secretsmanager"
             objectData = [
               {
-                key = "connection"
+                key = "airflow-portal-dev-connection-string"
                 objectAlias = "airflow-portal-dev-connection-string"  # Add this line
               }
             ]
@@ -69,7 +69,7 @@ resource "kubernetes_manifest" "secret_provider_class" {
             objectType = "secretsmanager"
             objectData = [
               {
-                key = "fernet_key"
+                key = "airflow-portal-dev-fernet-key"
                 objectAlias = "airflow-portal-dev-fernet-key"  # Add this line
               }
             ]

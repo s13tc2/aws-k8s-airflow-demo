@@ -109,6 +109,73 @@ jobs:
         run: |
           aws eks update-kubeconfig --name ${{ needs.infra.outputs.kubernetes_cluster_name }} --region ${{ needs.infra.outputs.primary_region }}
 
+      - name: Check Pod Status
+        run: |
+          echo "Checking pod status..."
+          kubectl get pods -n ${{ inputs.namespace }} -l app=${{ inputs.deployment-name }} -o wide
+          echo "-----------------------------------"
+
+      - name: Check SecretProviderClass
+        run: |
+          echo "Checking SecretProviderClass..."
+          kubectl get SecretProviderClass -n ${{ inputs.namespace }} \
+            airflow-portal-dev-secret-provider-class -o yaml || \
+            echo "SecretProviderClass not found"
+          echo "-----------------------------------"
+
+      - name: Check Kubernetes Secrets
+        run: |
+          echo "Checking Kubernetes secrets..."
+          kubectl get secrets -n ${{ inputs.namespace }} | grep airflow-portal-dev
+          echo "-----------------------------------"
+
+      - name: Check Pod Descriptions
+        run: |
+          echo "Checking pod descriptions..."
+          for pod in $(kubectl get pods -n ${{ inputs.namespace }} -l app=${{ inputs.deployment-name }} -o name); do
+            echo "Description for $pod:"
+            kubectl describe $pod -n ${{ inputs.namespace }}
+            echo "-----------------------------------"
+          done
+
+      - name: Check Pod Logs
+        run: |
+          echo "Checking pod logs..."
+          for pod in $(kubectl get pods -n ${{ inputs.namespace }} -l app=${{ inputs.deployment-name }} -o name); do
+            echo "Logs for $pod:"
+            kubectl logs $pod -n ${{ inputs.namespace }} --previous || true
+            kubectl logs $pod -n ${{ inputs.namespace }} || true
+            echo "-----------------------------------"
+          done
+
+      - name: Check CSI Driver Status
+        run: |
+          echo "Checking CSI driver status..."
+          kubectl get pods -n kube-system -l app=secrets-store-csi-driver
+          echo "-----------------------------------"
+
+      - name: Check Node Status
+        run: |
+          echo "Checking node status..."
+          kubectl get nodes
+          echo "-----------------------------------"
+
+      - name: Check Events
+        run: |
+          echo "Checking namespace events..."
+          kubectl get events -n ${{ inputs.namespace }} --sort-by='.lastTimestamp'
+          echo "-----------------------------------"
+
+      - name: Create Debug Summary
+        run: |
+          echo "Debug Summary" > debug_summary.txt
+          echo "==============" >> debug_summary.txt
+          echo "1. Check if SecretProviderClass exists in correct namespace" >> debug_summary.txt
+          echo "2. Verify secret keys match between SecretProviderClass and pod spec" >> debug_summary.txt
+          echo "3. Confirm CSI driver is running" >> debug_summary.txt
+          echo "4. Verify AWS IAM roles and permissions" >> debug_summary.txt
+          echo "5. Check for any node issues or resource constraints" >> debug_summary.txt
+
       # - name: Clean and Verify Secret Provider Setup
       #   run: |
       #     echo "Deleting old pods..."
