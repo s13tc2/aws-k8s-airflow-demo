@@ -159,6 +159,7 @@ jobs:
         run: |
           helm repo add secrets-store-csi-driver https://kubernetes-sigs.github.io/secrets-store-csi-driver/charts
           helm repo add aws-secrets-store https://aws.github.io/secrets-store-csi-driver-provider-aws
+          helm repo add apache-airflow https://airflow.apache.org
           helm repo update
 
       - name: Install/Upgrade Secrets Store CSI Driver
