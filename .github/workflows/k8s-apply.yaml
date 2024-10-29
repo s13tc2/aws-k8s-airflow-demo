@@ -109,190 +109,23 @@ jobs:
         run: |
           aws eks update-kubeconfig --name ${{ needs.infra.outputs.kubernetes_cluster_name }} --region ${{ needs.infra.outputs.primary_region }}
 
-      # - name: Debug Secret Provider Issues
-      #   run: |
-      #     echo "Checking pod status..."
-      #     kubectl get pods -n app -l app=airflow-webserver -o wide
+      - name: Verify Setup
+        run: |
+          echo "Checking pod status..."
+          kubectl get pods -n app -l app=airflow-webserver
           
-      #     echo "\nChecking SecretProviderClass..."
-      #     kubectl get SecretProviderClass -n app airflow-portal-dev-secret-provider-class -o yaml || \
-      #       echo "SecretProviderClass not found"
+          echo "\nChecking SecretProviderClass..."
+          kubectl get secretproviderclass -n app -o yaml
           
-      #     echo "\nChecking Kubernetes secrets..."
-      #     kubectl get secrets -n app | grep airflow-portal-dev
+          echo "\nChecking Kubernetes secrets..."
+          kubectl get secrets -n app
           
-      #     echo "\nChecking pod descriptions..."
-      #     for pod in $(kubectl get pods -n app -l app=airflow-webserver -o name); do
-      #       echo "Description for $pod:"
-      #       kubectl describe $pod -n app
-      #       echo "-----------------------------------"
-      #     done
+          echo "\nChecking pod description..."
+          kubectl describe pod -n app -l app=airflow-webserver
+          
+          echo "\nChecking CSI driver logs..."
+          kubectl logs -n kube-system -l app=secrets-store-csi-driver --tail=50
 
-      #     echo "\nChecking pod logs..."
-      #     for pod in $(kubectl get pods -n app -l app=airflow-webserver -o name); do
-      #       echo "Logs for $pod:"
-      #       kubectl logs $pod -n app --previous || true
-      #       kubectl logs $pod -n app || true
-      #       echo "-----------------------------------"
-      #     done
-
-      #     echo "\nChecking CSI driver status..."
-      #     kubectl get pods -n kube-system -l app=secrets-store-csi-driver
-      #     echo "\nCSI driver logs:"
-      #     kubectl logs -n kube-system -l app=secrets-store-csi-driver --tail=50
-          
-      #     echo "\nChecking node status..."
-      #     kubectl get nodes
-          
-      #     echo "\nChecking events..."
-      #     kubectl get events -n app --sort-by='.lastTimestamp'
-
-      # - name: Verify Secret Configuration
-      #   run: |
-      #     echo "Current SecretProviderClass configuration:"
-      #     kubectl get secretproviderclass -n app -o yaml
-          
-      #     echo "\nKubernetes Secrets:"
-      #     kubectl get secrets -n app
-          
-      #     echo "\nSecret mount status in pods:"
-      #     kubectl describe pods -n app -l app=airflow-webserver | grep -A 5 Volumes
-
-      # - name: Check Container Configuration
-      #   run: |
-      #     echo "Pod Description with Config Details:"
-      #     kubectl describe pod -n app -l app=airflow-webserver
-          
-      #     echo "\nDeployment Configuration:"
-      #     kubectl get deployment -n app airflow-webserver -o yaml
-          
-      #     echo "\nLatest Events:"
-      #     kubectl get events -n app --sort-by='.lastTimestamp' | tail -n 20
-
-      # - name: Clean and Verify Secret Provider Setup
-      #   run: |
-      #     echo "Deleting old pods..."
-      #     kubectl delete pod -n app -l app=airflow-webserver --force --grace-period=0 || true
-          
-      #     echo "\nVerifying SecretProviderClass exists..."
-      #     if ! kubectl get secretproviderclass -n app airflow-portal-dev-secret-provider-class; then
-      #       echo "SecretProviderClass not found. Waiting for Terraform to create it..."
-      #       # Wait for SecretProviderClass to be created (adjust timeout as needed)
-      #       timeout=60
-      #       while [ $timeout -gt 0 ] && ! kubectl get secretproviderclass -n app airflow-portal-dev-secret-provider-class; do
-      #         sleep 5
-      #         timeout=$((timeout-5))
-      #         echo "Waiting for SecretProviderClass... ${timeout}s remaining"
-      #       done
-      #     fi
-          
-      #     echo "\nVerifying SecretProviderClass configuration..."
-      #     kubectl get secretproviderclass -n app airflow-portal-dev-secret-provider-class -o yaml
-          
-      #     echo "\nRestarting deployment to pick up new configuration..."
-      #     kubectl rollout restart deployment/airflow-webserver -n app
-          
-      #     echo "\nWaiting for deployment rollout..."
-      #     kubectl rollout status deployment/airflow-webserver -n app --timeout=300s
-
-
-      # - name: Verify Setup
-      #   run: |
-      #     echo "Checking pod status..."
-      #     kubectl get pods -n app -l app=airflow-webserver
-          
-      #     echo "\nChecking SecretProviderClass..."
-      #     kubectl get secretproviderclass -n app -o yaml
-          
-      #     echo "\nChecking Kubernetes secrets..."
-      #     kubectl get secrets -n app
-          
-      #     echo "\nChecking pod description..."
-      #     kubectl describe pod -n app -l app=airflow-webserver
-          
-      #     echo "\nChecking CSI driver logs..."
-      #     kubectl logs -n kube-system -l app=secrets-store-csi-driver --tail=50
-
-      # - name: Debug Status
-      #   run: |
-      #     echo "Checking pod status..."
-      #     kubectl get pods -n app -l app=airflow-webserver
-          
-      #     echo "\nChecking pod description..."
-      #     kubectl describe pod -n app -l app=airflow-webserver
-          
-      #     echo "\nChecking latest events..."
-      #     kubectl get events -n app --sort-by='.lastTimestamp' | tail -n 20
-
-      # - name: Debug Secrets
-      #   run: |
-      #     echo "Checking AWS Secrets Manager..."
-      #     aws secretsmanager list-secrets | grep airflow-portal-dev
-          
-      #     echo "\nGetting AWS Secret Values..."
-      #     aws secretsmanager get-secret-value --secret-id airflow-portal-dev-connection-string
-      #     aws secretsmanager get-secret-value --secret-id airflow-portal-dev-fernet-key
-          
-      #     echo "\nChecking Kubernetes Secrets..."
-      #     kubectl get secrets -n app
-          
-      #     echo "\nDescribing Kubernetes Secrets..."
-      #     kubectl describe secret airflow-portal-dev-connection-string -n app
-      #     kubectl describe secret airflow-portal-dev-fernet-key -n app
-          
-      #     echo "\nChecking Secret Provider Class..."
-      #     kubectl get secretproviderclass -n app -o yaml
-          
-      #     echo "\nChecking CSI Driver Status..."
-      #     kubectl get pods -n kube-system -l app=secrets-store-csi-driver
-      #     kubectl logs -n kube-system -l app=secrets-store-csi-driver --tail=100
-
-      # - name: Clean Up and Recreate Secrets
-      #   run: |
-      #     echo "Deleting existing SecretProviderClass..."
-      #     kubectl delete secretproviderclass -n app airflow-portal-dev-secret-provider-class || true
-          
-      #     echo "Deleting existing Kubernetes secrets..."
-      #     kubectl delete secret -n app airflow-portal-dev-connection-string || true
-      #     kubectl delete secret -n app airflow-portal-dev-fernet-key || true
-          
-      #     echo "Deleting pods to force recreation..."
-      #     kubectl delete pod -n app -l app=airflow-webserver --force --grace-period=0 || true
-          
-      #     echo "Waiting for new pod to be created..."
-      #     kubectl wait --for=condition=ready pod -l app=airflow-webserver -n app --timeout=300s
-
-      # - name: Verify Secret Setup
-      #   run: |
-      #     echo "Checking SecretProviderClass..."
-      #     kubectl get secretproviderclass -n app
-          
-      #     echo "\nChecking Kubernetes secrets..."
-      #     kubectl get secrets -n app
-          
-      #     echo "\nChecking pod status..."
-      #     kubectl get pods -n app -l app=airflow-webserver
-          
-      #     echo "\nChecking pod events..."
-      #     kubectl get events -n app --sort-by='.lastTimestamp' | grep airflow-webserver
-
-      # - name: Check CSI Driver Logs
-      #   if: ${{ failure() }}
-      #   run: |
-      #     echo "CSI Driver Logs..."
-      #     kubectl logs -n kube-system -l app=secrets-store-csi-driver --tail=100
-
-      # - name: Check AWS Secrets
-      #   run: |
-      #     echo "Checking AWS Secrets Manager..."
-      #     aws secretsmanager list-secrets | grep airflow-portal-dev
-
-
-      # - name: Debug Secret Provider Class
-      #   run: |
-      #     echo "Checking Secret Provider Class configuration..."
-      #     kubectl get secretproviderclass airflow-portal-dev-secret-provider-class -n app -o yaml
-      
       - name: Get Pods Status
         run: |
           kubectl get pods -n app -o wide
@@ -310,38 +143,37 @@ jobs:
         run: |
           kubectl get pods --all-namespaces -o wide
 
-      # - name: Debug Container Config Error
-      #   run: |
-      #     echo "Pod Description:"
-      #     kubectl describe pod -n app -l app=airflow-webserver      
-      #     echo "\nPod Events:"
-      #     kubectl get events -n app --sort-by='.lastTimestamp' | grep airflow-webserver
+      - name: Debug Container Config Error
+        run: |
+          echo "Pod Description:"
+          kubectl describe pod -n app -l app=airflow-webserver      
+          echo "\nPod Events:"
+          kubectl get events -n app --sort-by='.lastTimestamp' | grep airflow-webserver
           
-      #     echo "\nContainer Logs (if any):"
-      #     kubectl logs -n app -l app=airflow-webserver --all-containers=true --previous      
-      #     echo "\nDeployment Configuration:"
-      #     kubectl get deployment -n app airflow-webserver -o yaml
+          echo "\nContainer Logs (if any):"
+          kubectl logs -n app -l app=airflow-webserver --all-containers=true --previous      
+          echo "\nDeployment Configuration:"
+          kubectl get deployment -n app airflow-webserver -o yaml
 
-      # - name: Debug Secret Provider Class Names
-      #   run: |
-      #     echo "Expected Secret Provider Class name:"
-      #     terraform output secret_provider_class_name
+      - name: Debug Secret Provider Class Names
+        run: |
+          echo "Expected Secret Provider Class name:"
+          terraform output secret_provider_class_name
           
-      #     echo "Actual Secret Provider Classes in cluster:"
-      #     kubectl get secretproviderclass -n app -o name
+          echo "Actual Secret Provider Classes in cluster:"
+          kubectl get secretproviderclass -n app -o name
 
-      # - name: Debug Secret Provider
-      #   run: |
-      #     echo "Checking Secret Provider Class..."
-      #     kubectl get secretproviderclass -n app
+      - name: Debug Secret Provider
+        run: |
+          echo "Checking Secret Provider Class..."
+          kubectl get secretproviderclass -n app
           
-      #     echo "Checking Secret Provider Class Details..."
-      #     kubectl get secretproviderclass airflow-portal-dev-secret-provider-class -n app -o yaml
+          echo "Checking Secret Provider Class Details..."
+          kubectl get secretproviderclass airflow-portal-dev-secret-provider-class -n app -o yaml
           
-      #     echo "Checking Secrets Store CSI Driver Logs..."
-      #     kubectl logs -n kube-system -l app=secrets-store-csi-driver
+          echo "Checking Secrets Store CSI Driver Logs..."
+          kubectl logs -n kube-system -l app=secrets-store-csi-driver
           
-
       - name: Get Pods Status
         run: |
           kubectl get pods -n app -o wide
