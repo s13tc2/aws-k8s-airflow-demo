@@ -132,20 +132,20 @@ jobs:
       #     kubectl get pods -n kube-system -l app=secrets-store-csi-driver
       #     kubectl logs -n kube-system -l app=secrets-store-csi-driver --tail=100
 
-      - name: Clean Up and Recreate Secrets
-        run: |
-          echo "Deleting existing SecretProviderClass..."
-          kubectl delete secretproviderclass -n app airflow-portal-dev-secret-provider-class || true
+      # - name: Clean Up and Recreate Secrets
+      #   run: |
+      #     echo "Deleting existing SecretProviderClass..."
+      #     kubectl delete secretproviderclass -n app airflow-portal-dev-secret-provider-class || true
           
-          echo "Deleting existing Kubernetes secrets..."
-          kubectl delete secret -n app airflow-portal-dev-connection-string || true
-          kubectl delete secret -n app airflow-portal-dev-fernet-key || true
+      #     echo "Deleting existing Kubernetes secrets..."
+      #     kubectl delete secret -n app airflow-portal-dev-connection-string || true
+      #     kubectl delete secret -n app airflow-portal-dev-fernet-key || true
           
-          echo "Deleting pods to force recreation..."
-          kubectl delete pod -n app -l app=airflow-webserver --force --grace-period=0 || true
+      #     echo "Deleting pods to force recreation..."
+      #     kubectl delete pod -n app -l app=airflow-webserver --force --grace-period=0 || true
           
-          echo "Waiting for new pod to be created..."
-          kubectl wait --for=condition=ready pod -l app=airflow-webserver -n app --timeout=300s
+      #     echo "Waiting for new pod to be created..."
+      #     kubectl wait --for=condition=ready pod -l app=airflow-webserver -n app --timeout=300s
 
       # - name: Verify Secret Setup
       #   run: |
