@@ -14,6 +14,6 @@ output "k8s_namespace" {
 #   value = var.web_airflow_image.version
 # }
 
-output "airflow_helm_template" {
-    value = data.helm_template.airflow.values
-}
+# output "airflow_helm_template" {
+#     value = data.helm_template.airflow.values
+# }
