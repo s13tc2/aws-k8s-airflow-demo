@@ -143,36 +143,36 @@ jobs:
         run: |
           kubectl get pods --all-namespaces -o wide
 
-      - name: Debug Container Config Error
-        run: |
-          echo "Pod Description:"
-          kubectl describe pod -n app -l app=airflow-webserver      
-          echo "\nPod Events:"
-          kubectl get events -n app --sort-by='.lastTimestamp' | grep airflow-webserver
+      # - name: Debug Container Config Error
+      #   run: |
+      #     echo "Pod Description:"
+      #     kubectl describe pod -n app -l app=airflow-webserver      
+      #     echo "\nPod Events:"
+      #     kubectl get events -n app --sort-by='.lastTimestamp' | grep airflow-webserver
           
-          echo "\nContainer Logs (if any):"
-          kubectl logs -n app -l app=airflow-webserver --all-containers=true --previous      
-          echo "\nDeployment Configuration:"
-          kubectl get deployment -n app airflow-webserver -o yaml
+      #     echo "\nContainer Logs (if any):"
+      #     kubectl logs -n app -l app=airflow-webserver --all-containers=true --previous      
+      #     echo "\nDeployment Configuration:"
+      #     kubectl get deployment -n app airflow-webserver -o yaml
 
-      - name: Debug Secret Provider Class Names
-        run: |
-          echo "Expected Secret Provider Class name:"
-          terraform output secret_provider_class_name
+      # - name: Debug Secret Provider Class Names
+      #   run: |
+      #     echo "Expected Secret Provider Class name:"
+      #     terraform output secret_provider_class_name
           
-          echo "Actual Secret Provider Classes in cluster:"
-          kubectl get secretproviderclass -n app -o name
+      #     echo "Actual Secret Provider Classes in cluster:"
+      #     kubectl get secretproviderclass -n app -o name
 
-      - name: Debug Secret Provider
-        run: |
-          echo "Checking Secret Provider Class..."
-          kubectl get secretproviderclass -n app
+      # - name: Debug Secret Provider
+      #   run: |
+      #     echo "Checking Secret Provider Class..."
+      #     kubectl get secretproviderclass -n app
           
-          echo "Checking Secret Provider Class Details..."
-          kubectl get secretproviderclass airflow-portal-dev-secret-provider-class -n app -o yaml
+      #     echo "Checking Secret Provider Class Details..."
+      #     kubectl get secretproviderclass airflow-portal-dev-secret-provider-class -n app -o yaml
           
-          echo "Checking Secrets Store CSI Driver Logs..."
-          kubectl logs -n kube-system -l app=secrets-store-csi-driver
+      #     echo "Checking Secrets Store CSI Driver Logs..."
+      #     kubectl logs -n kube-system -l app=secrets-store-csi-driver
           
       - name: Get Pods Status
         run: |
