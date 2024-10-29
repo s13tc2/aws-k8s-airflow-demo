@@ -35,11 +35,10 @@ resource "null_resource" "wait_for_crds" {
   ]
 }
 
-# Modify your locals block
 locals {
   secrets = {
-    "airflow-portal-dev-connection-string" = "AIRFLOW_CONNECTION_STRING"
-    "airflow-portal-dev-fernet-key" = "FERNET_KEY"
+    "airflow-portal-dev-connection-string" = aws_secretsmanager_secret.database_connection_string.name
+    "airflow-portal-dev-fernet-key" = aws_secretsmanager_secret.fernet_key.name
   }
 }
 
@@ -56,22 +55,22 @@ resource "kubernetes_manifest" "secret_provider_class" {
       parameters = {
         objects = yamlencode([
           {
-            objectName = "airflow-portal-dev-connection-string"
-            objectType = "secretsmanager"  # Changed from kubernetes.io/secret
+            objectName = local.secrets["airflow-portal-dev-connection-string"]
+            objectType = "secretsmanager"
             objectData = [
               {
                 key = "connection"
-                value = local.secrets["airflow-portal-dev-connection-string"]
+                objectAlias = "airflow-portal-dev-connection-string"  # Add this line
               }
             ]
           },
           {
-            objectName = "airflow-portal-dev-fernet-key"
-            objectType = "secretsmanager"  # Changed from kubernetes.io/secret
+            objectName = local.secrets["airflow-portal-dev-fernet-key"]
+            objectType = "secretsmanager"
             objectData = [
               {
                 key = "fernet_key"
-                value = local.secrets["airflow-portal-dev-fernet-key"]
+                objectAlias = "airflow-portal-dev-fernet-key"  # Add this line
               }
             ]
           }
@@ -81,8 +80,8 @@ resource "kubernetes_manifest" "secret_provider_class" {
         {
           data = [
             {
-              key = "airflow-portal-dev-connection-string"
-              objectName = "airflow-portal-dev-connection-string"
+              key = "connection"
+              objectName = local.secrets["airflow-portal-dev-connection-string"]
             }
           ]
           secretName = "airflow-portal-dev-connection-string"
@@ -91,8 +90,8 @@ resource "kubernetes_manifest" "secret_provider_class" {
         {
           data = [
             {
-              key = "airflow-portal-dev-fernet-key"
-              objectName = "airflow-portal-dev-fernet-key"
+              key = "fernet_key"
+              objectName = local.secrets["airflow-portal-dev-fernet-key"]
             }
           ]
           secretName = "airflow-portal-dev-fernet-key"

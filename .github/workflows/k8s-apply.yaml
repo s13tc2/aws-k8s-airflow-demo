@@ -109,39 +109,74 @@ jobs:
         run: |
           aws eks update-kubeconfig --name ${{ needs.infra.outputs.kubernetes_cluster_name }} --region ${{ needs.infra.outputs.primary_region }}
 
-      - name: Debug Secrets
-        run: |
-          echo "Checking AWS Secrets Manager..."
-          aws secretsmanager list-secrets | grep airflow-portal-dev
+      # - name: Debug Secrets
+      #   run: |
+      #     echo "Checking AWS Secrets Manager..."
+      #     aws secretsmanager list-secrets | grep airflow-portal-dev
           
-          echo "\nGetting AWS Secret Values..."
-          aws secretsmanager get-secret-value --secret-id airflow-portal-dev-connection-string
-          aws secretsmanager get-secret-value --secret-id airflow-portal-dev-fernet-key
+      #     echo "\nGetting AWS Secret Values..."
+      #     aws secretsmanager get-secret-value --secret-id airflow-portal-dev-connection-string
+      #     aws secretsmanager get-secret-value --secret-id airflow-portal-dev-fernet-key
           
-          echo "\nChecking Kubernetes Secrets..."
-          kubectl get secrets -n app
+      #     echo "\nChecking Kubernetes Secrets..."
+      #     kubectl get secrets -n app
           
-          echo "\nDescribing Kubernetes Secrets..."
-          kubectl describe secret airflow-portal-dev-connection-string -n app
-          kubectl describe secret airflow-portal-dev-fernet-key -n app
+      #     echo "\nDescribing Kubernetes Secrets..."
+      #     kubectl describe secret airflow-portal-dev-connection-string -n app
+      #     kubectl describe secret airflow-portal-dev-fernet-key -n app
           
-          echo "\nChecking Secret Provider Class..."
-          kubectl get secretproviderclass -n app -o yaml
+      #     echo "\nChecking Secret Provider Class..."
+      #     kubectl get secretproviderclass -n app -o yaml
           
-          echo "\nChecking CSI Driver Status..."
-          kubectl get pods -n kube-system -l app=secrets-store-csi-driver
-          kubectl logs -n kube-system -l app=secrets-store-csi-driver --tail=100
+      #     echo "\nChecking CSI Driver Status..."
+      #     kubectl get pods -n kube-system -l app=secrets-store-csi-driver
+      #     kubectl logs -n kube-system -l app=secrets-store-csi-driver --tail=100
 
-      - name: Check AWS Secrets
+      - name: Clean Up and Recreate Secrets
         run: |
-          echo "Checking AWS Secrets Manager..."
-          aws secretsmanager list-secrets | grep airflow-portal-dev
+          echo "Deleting existing SecretProviderClass..."
+          kubectl delete secretproviderclass -n app airflow-portal-dev-secret-provider-class || true
+          
+          echo "Deleting existing Kubernetes secrets..."
+          kubectl delete secret -n app airflow-portal-dev-connection-string || true
+          kubectl delete secret -n app airflow-portal-dev-fernet-key || true
+          
+          echo "Deleting pods to force recreation..."
+          kubectl delete pod -n app -l app=airflow-webserver --force --grace-period=0 || true
+          
+          echo "Waiting for new pod to be created..."
+          kubectl wait --for=condition=ready pod -l app=airflow-webserver -n app --timeout=300s
+
+      # - name: Verify Secret Setup
+      #   run: |
+      #     echo "Checking SecretProviderClass..."
+      #     kubectl get secretproviderclass -n app
+          
+      #     echo "\nChecking Kubernetes secrets..."
+      #     kubectl get secrets -n app
+          
+      #     echo "\nChecking pod status..."
+      #     kubectl get pods -n app -l app=airflow-webserver
+          
+      #     echo "\nChecking pod events..."
+      #     kubectl get events -n app --sort-by='.lastTimestamp' | grep airflow-webserver
+
+      # - name: Check CSI Driver Logs
+      #   if: ${{ failure() }}
+      #   run: |
+      #     echo "CSI Driver Logs..."
+      #     kubectl logs -n kube-system -l app=secrets-store-csi-driver --tail=100
+
+      # - name: Check AWS Secrets
+      #   run: |
+      #     echo "Checking AWS Secrets Manager..."
+      #     aws secretsmanager list-secrets | grep airflow-portal-dev
 
 
-      - name: Debug Secret Provider Class
-        run: |
-          echo "Checking Secret Provider Class configuration..."
-          kubectl get secretproviderclass airflow-portal-dev-secret-provider-class -n app -o yaml
+      # - name: Debug Secret Provider Class
+      #   run: |
+      #     echo "Checking Secret Provider Class configuration..."
+      #     kubectl get secretproviderclass airflow-portal-dev-secret-provider-class -n app -o yaml
       
       - name: Get Pods Status
         run: |
