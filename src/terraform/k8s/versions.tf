@@ -16,6 +16,10 @@ terraform {
       source  = "hashicorp/time"
       version = ">= 0.7.0"
     }
+    helm = {
+      source  = "hashicorp/helm"
+      version = "~> 2.0"
+    }
   }
   backend "s3" {
   }
