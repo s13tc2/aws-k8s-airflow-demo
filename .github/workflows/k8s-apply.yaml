@@ -109,6 +109,29 @@ jobs:
         run: |
           aws eks update-kubeconfig --name ${{ needs.infra.outputs.kubernetes_cluster_name }} --region ${{ needs.infra.outputs.primary_region }}
 
+      - name: Debug Secrets
+        run: |
+          echo "Checking AWS Secrets Manager..."
+          aws secretsmanager list-secrets | grep airflow-portal-dev
+          
+          echo "\nGetting AWS Secret Values..."
+          aws secretsmanager get-secret-value --secret-id airflow-portal-dev-connection-string
+          aws secretsmanager get-secret-value --secret-id airflow-portal-dev-fernet-key
+          
+          echo "\nChecking Kubernetes Secrets..."
+          kubectl get secrets -n app
+          
+          echo "\nDescribing Kubernetes Secrets..."
+          kubectl describe secret airflow-portal-dev-connection-string -n app
+          kubectl describe secret airflow-portal-dev-fernet-key -n app
+          
+          echo "\nChecking Secret Provider Class..."
+          kubectl get secretproviderclass -n app -o yaml
+          
+          echo "\nChecking CSI Driver Status..."
+          kubectl get pods -n kube-system -l app=secrets-store-csi-driver
+          kubectl logs -n kube-system -l app=secrets-store-csi-driver --tail=100
+
       - name: Check AWS Secrets
         run: |
           echo "Checking AWS Secrets Manager..."
